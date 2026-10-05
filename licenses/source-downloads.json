@@ -1,0 +1,67 @@
+[
+  {
+    "sha256": "3e0af25fdd06aa9586ae97adb00ea927ebe5a3805ac77d2d3a81ce5f55693333",
+    "file": "upstream\\RapidOCR-LICENSE",
+    "url": "https://raw.githubusercontent.com/RapidAI/RapidOCR/main/LICENSE"
+  },
+  {
+    "sha256": "3840c5c0c61c294264d2dd77b8777be6ddd90121ef4e0e64abcd22edea581d6e",
+    "file": "upstream\\PaddleOCR-LICENSE",
+    "url": "https://raw.githubusercontent.com/PaddlePaddle/PaddleOCR/main/LICENSE"
+  },
+  {
+    "sha256": "93a73400a67ba64071d073386c96b21da8d8265574de0c71520061f741b0d645",
+    "file": "upstream\\OpenCvSharp-LICENSE",
+    "url": "https://raw.githubusercontent.com/shimat/opencvsharp/master/LICENSE"
+  },
+  {
+    "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+    "file": "upstream\\OpenCV-LICENSE",
+    "url": "https://raw.githubusercontent.com/opencv/opencv/4.10.0/LICENSE"
+  },
+  {
+    "sha256": "3071658fba9a054edce74e756314ba926fe3ffe5c6622f209d21a0c8f1d2a99e",
+    "file": "upstream\\ClosedXML-LICENSE",
+    "url": "https://raw.githubusercontent.com/ClosedXML/ClosedXML/d15f6690886801980c0d83b7eb1d1b5d2171ad31/LICENSE"
+  },
+  {
+    "sha256": "7133dfd8c1167ffa77389859013ac5bf2d184639f5a291a00d33b0b7d7b84df3",
+    "file": "upstream\\ClosedXML.Parser-LICENSE",
+    "url": "https://raw.githubusercontent.com/ClosedXML/ClosedXML.Parser/658973aeedc2fe289e0ccba2bb9959f67692ded5/LICENSE.txt"
+  },
+  {
+    "sha256": "6650b0063a39e7dced886e53c6dac66fcd909beb8b9abb868452c9b621fa2018",
+    "file": "upstream\\ExcelNumberFormat-LICENSE",
+    "url": "https://raw.githubusercontent.com/andersnm/ExcelNumberFormat/master/LICENSE"
+  },
+  {
+    "sha256": "f6bfae3ff6477fbca0c850f115da170516b1c633a98619ea5dcc6720dcdcb288",
+    "file": "upstream\\RBush-LICENSE",
+    "url": "https://raw.githubusercontent.com/viceroypenguin/RBush/b8690322abac35d835baa2fdca4a3918ed77a910/LICENSE"
+  },
+  {
+    "sha256": "f38dc2765451fd2b19d7e0f47ed655f3a1cb889b28341ea6266efd75d8425a6f",
+    "file": "upstream\\SixLabors.Fonts-LICENSE",
+    "url": "https://raw.githubusercontent.com/SixLabors/Fonts/32bef42997adb10268369ca149777f00e4241ce9/LICENSE"
+  },
+  {
+    "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+    "file": "upstream\\SQLitePCLRaw-LICENSE",
+    "url": "https://raw.githubusercontent.com/ericsink/SQLitePCL.raw/master/LICENSE.TXT"
+  },
+  {
+    "sha256": "ed03ba352313a4ba7019d5bed4bd3218ac17f3e44442a3bb1aaff54dcca9a2bc",
+    "file": "upstream\\OpenXML-LICENSE",
+    "url": "https://raw.githubusercontent.com/dotnet/Open-XML-SDK/v3.1.1/LICENSE"
+  },
+  {
+    "sha256": "e68042997a29b06e4cc7cf6c00e22846d1e614800f905353732fc610bdbd72cd",
+    "file": "upstream\\VisualCpp-runtime-license.html",
+    "url": "https://visualstudio.microsoft.com/license-terms/vs2022-cruntime/"
+  },
+  {
+    "sha256": "df2c50503295f325e7c8d7b783aca8ba4773919cde984193850cf9e361dfd28c",
+    "file": "sources\\geos-3.13.1.tar.bz2",
+    "url": "https://download.osgeo.org/geos/geos-3.13.1.tar.bz2"
+  }
+]

@@ -1,0 +1,11 @@
+**/bin/
+**/obj/
+tools/
+ocr/.venv/
+ocr/build/
+ocr/dist/
+dist/
+artifacts/
+*.user
+*.db*
+__pycache__/

@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType><TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF><RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained><AssemblyName>LocalStockManager</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Stock.Core/Stock.Core.csproj" />
+    <PackageReference Include="OpenCvSharp4" Version="4.10.0.20240616" />
+    <PackageReference Include="OpenCvSharp4.runtime.win" Version="4.10.0.20240616" />
+  </ItemGroup>
+</Project>
