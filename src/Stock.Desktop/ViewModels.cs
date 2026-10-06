@@ -43,22 +43,27 @@ public sealed class MainViewModel : Observable
     public string RecordSearch { get; set; } = "";
     public bool Inventory { get; set; }
     public QueryFilter? AppliedFilter { get; private set; }
-    private int page; private IReadOnlyList<DocumentRecord> results=[];
-    public int Page { get=>page; set { page=Math.Clamp(value,0,Math.Max(0,(results.Count-1)/100)); ShowPage(); } }
-    public string PageText => $"第{page+1}页 / {Math.Max(1,(results.Count+99)/100)}页 · 共{results.Count}张单据";
-    public string RetentionText => "仅保留最近5年记录，保留起始日期：" + Rules.DateText(Service.Cutoff);
-    private string notice="本机保存 · 完全离线"; public string Notice { get=>notice; set=>Set(ref notice,value); }
+    public ProductFilter? ProductSelection { get; set; }
+    public ProductFilter? RecordSelection { get; set; }
+    private int page,productPage; private long recordCount,productCount;
+    public int ProductPage { get=>productPage;set{productPage=(int)Math.Clamp(value,0,Math.Max(0,(productCount-1)/100));RefreshProducts(false);} }
+    public string ProductPageText=>$"第{productPage+1}页 · 共{productCount}种货品";
+    public int Page { get=>page; set { page=(int)Math.Clamp(value,0,Math.Max(0,(recordCount-1)/100)); ShowPage(); } }
+    public string PageText => $"第{page+1}页 / {Math.Max(1,(recordCount+99)/100)}页 · 共{recordCount}张单据";
+    public string RetentionText => "仅保留最近3年记录，保留起始日期：" + Rules.DateText(Service.Cutoff);
+    private string notice="库存本机保存 · 云端识别仅上传确认截图"; public string Notice { get=>notice; set=>Set(ref notice,value); }
     public MainViewModel(StockService service) { Service=service; preset=Presets[0]; Kind=Kinds[0]; Status=Statuses[0]; Refresh(); }
-    public void RefreshProducts() { Products.Clear(); foreach(var p in Service.Products(Search,IncludeInactive)) Products.Add(p); }
+    public void RefreshProducts() => RefreshProducts(true);
+    private void RefreshProducts(bool reset) { if(reset)productPage=0;var batch=Service.ProductPage(ProductSelection,Search,IncludeInactive,productPage);productCount=batch.Count;Products.Clear();foreach(var p in batch.Items)Products.Add(p);Changed(nameof(ProductPageText)); }
     public void Refresh() { RefreshProducts(); if(AppliedFilter is not null) LoadRecords(AppliedFilter); Changed(nameof(RetentionText)); }
     public QueryFilter Filter()
     {
         if(Start is null || End is null) throw new BusinessException("请选择有效的开始和结束日期。");
-        return new(DateOnly.FromDateTime(Start.Value),DateOnly.FromDateTime(End.Value),Kind?.Value,Channel=="全部"?null:Channel,RecordSearch,Status?.Value??StatusFilter.Valid,Inventory);
+        return new(DateOnly.FromDateTime(Start.Value),DateOnly.FromDateTime(End.Value),Kind?.Value,Channel=="全部"?null:Channel,RecordSearch,Status?.Value??StatusFilter.Valid,Inventory,RecordSelection);
     }
     public void Query() => LoadRecords(Filter());
-    private void LoadRecords(QueryFilter filter) { results=Service.Query(filter); AppliedFilter=filter; page=0; ShowPage(); Notice=filter.Start<Service.Cutoff?"查询包含已过保留期的日期；该部分记录已删除。":"查询已更新"; }
-    private void ShowPage() { Records.Clear(); foreach(var d in results.Skip(page*100).Take(100))Records.Add(new(d)); Changed(nameof(PageText)); }
+    private void LoadRecords(QueryFilter filter) { AppliedFilter=filter; page=0; ShowPage(); Notice=filter.Start<Service.Cutoff?"查询包含已过保留期的日期；该部分记录已删除。":"查询已更新"; }
+    private void ShowPage() { if(AppliedFilter is null)return;var batch=Service.QueryPage(AppliedFilter,page);recordCount=batch.Count;Records.Clear();foreach(var d in batch.Items)Records.Add(new(d));Changed(nameof(PageText)); }
     public async Task ExportAsync(string path) { Query();var filter=AppliedFilter!;await Task.Run(()=>ExcelExporter.Export(Service,filter,path)); Notice="Excel 已导出完整筛选结果"; }
     public string Receipt(string id) { Refresh(); return Service.GetDocument(id).Number; }
     public async Task BackupAsync(string path) => await Task.Run(()=>Service.Backup(path));
@@ -66,9 +71,17 @@ public sealed class MainViewModel : Observable
 }
 public sealed class DraftLine : Observable
 {
+    public int PhotoOrder { get; init; }
+    public string OriginalOrder { get; init; }="";
+    public string Marker { get; init; }="";
+    public string RawUnit { get; init; }="";
+    public string RawName { get; init; }="";
+    public string ReviewNote { get; init; }="";
+    private bool reviewed=true;
+    public bool Reviewed { get=>reviewed;set=>Set(ref reviewed,value); }
     public Product Product { get; }
     private string quantity="1";
-    public string Quantity { get=>quantity; set=>Set(ref quantity,value); }
+    public string Quantity { get=>quantity; set{if(Set(ref quantity,value)&&PhotoOrder>0)Reviewed=false;} }
     public DraftLine(Product product,string quantity) { Product=product; this.quantity=quantity; }
 }
 public sealed class DraftViewModel : Observable
@@ -78,15 +91,27 @@ public sealed class DraftViewModel : Observable
     public string Channel { get; set; }
     public ObservableCollection<DraftLine> Lines { get; }=[];
     public List<string> Photos { get; }=[];
+    public Dictionary<string,string> PhotoMetadata { get; }=[];
+    public HashSet<string> PhotoHashes { get; }=[];
+    public Dictionary<int,IReadOnlyDictionary<ProductType,long?>> PhotoTotals { get; }=[];
+    public string TotalCorrection { get; set; }="";
     public string SubmissionKey { get; }=Guid.NewGuid().ToString("N");
     public DraftViewModel(StockService service,DocumentKind kind) { Service=service; Kind=kind; Channel=kind==DocumentKind.Purchase?"厂家":""; }
     public void Add(Product product,long quantity)
     {
-        Rules.Quantity(quantity); var existing=Lines.FirstOrDefault(l=>l.Product.Id==product.Id);
-        if(existing is null)Lines.Add(new(product,quantity.ToString()));
-        else { if(!IntegerInput.TryParse(existing.Quantity,1,out var current))throw new BusinessException("请先修正该货品在清单中的数量。"); var total=checked(current+quantity); Rules.Quantity(total); existing.Quantity=total.ToString(); }
+        Rules.Quantity(quantity,Kind==DocumentKind.Purchase); Lines.Add(new(product,quantity.ToString()));
     }
-    public IReadOnlyList<LineInput> Inputs() => Lines.Select(l => IntegerInput.TryParse(l.Quantity,1,out var q)?new LineInput(l.Product.Id,q):throw new BusinessException($"{l.Product.Display} 的数量必须是1到2147483647之间的整数。")).ToList();
+    public IReadOnlyList<LineInput> Inputs()
+    {
+        if(Lines.Any(l=>l.PhotoOrder>0&&!l.Reviewed))throw new BusinessException("照片明细数量已修改，请重新勾选该行已核对。");
+        var inputs=Lines.Select(l=>IntegerInput.TryParse(l.Quantity,Kind==DocumentKind.Purchase?0:1,out var q)?new LineInput(l.Product.Id,q,l.PhotoOrder,l.OriginalOrder,l.Marker,l.RawUnit,l.RawName,string.Join("；",new[]{l.ReviewNote,TotalCorrection}.Where(n=>n.Length>0))):throw new BusinessException($"{l.Product.Display} 的数量必须是有效整数。")).ToList();
+        foreach(var photo in PhotoTotals)foreach(var total in photo.Value.Where(t=>t.Value.HasValue))
+        {
+            var photoLines=Lines.Where(l=>l.PhotoOrder==photo.Key).ToList();var sum=photoLines.Where(l=>l.Product.Type==total.Key).Sum(l=>long.Parse(l.Quantity));
+            if(sum!=total.Value&&string.IsNullOrWhiteSpace(TotalCorrection)&&!photoLines.Any(l=>l.ReviewNote.Length>0))throw new BusinessException("照片分区合计与草稿不一致，请修正或在草稿中填写明确核对原单合计有误的原因。");
+        }
+        return inputs;
+    }
     public IReadOnlyList<StockImpact> Preview() { if(Kind==DocumentKind.Sale&&Channel is not("零售" or "批发"))throw new BusinessException("请先选择零售或批发。");return Service.Preview(Kind,Inputs()); }
-    public Task<string> CommitAsync() { var lines=Inputs(); return Task.Run(()=>Service.Commit(Kind,Channel,lines,SubmissionKey,Photos)); }
+    public Task<string> CommitAsync() { var lines=Inputs(); return Task.Run(()=>Service.Commit(Kind,Channel,lines,SubmissionKey,Photos,PhotoMetadata)); }
 }

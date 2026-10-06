@@ -1,63 +1,48 @@
-# 本地库存管理
+# 本地库存管理 1.1.0
 
-Windows 11 x64、WPF / .NET 10、SQLite、本地中文 OCR、Excel 导出。业务范围与固定验收条件见 [执行规格](docs/执行规格.md)。最终用户使用 `dist` 中的离线安装包，不需要开发环境。
+Windows 11 x64、WPF / .NET 10、SQLite。库存本机保存；照片识别使用阿里云百炼 `qwen3.5-ocr`，只上传用户确认的表格截图。手工业务与本机离线备用识别可断网使用。
 
-## 下载与备份
+本次执行的最终计划见 [升级计划](docs/升级计划-v1.1.md)，操作说明见 [使用说明](docs/使用说明.md)，实际验证结果和未验证边界见 [验收报告](docs/验收报告.md) 与 [已知限制](docs/已知限制.md)。安装包、SHA-256、说明书及报告在本机 `dist` 目录，也可从 [GitHub 1.1.0 发布页](https://github.com/traveller1974/Personal-Local-Offline-Storage-System/releases/tag/local-stock-manager-v1.1.0) 下载。
 
-[下载 1.0.0 离线安装包、校验文件和交付文档](https://github.com/traveller1974/-/releases/tag/local-stock-manager-v1.0.0)。安装包适用于 Windows 11 x64，正常使用和中文 OCR 均不需要联网。
+安装包只更新程序目录，保留已有数据库、照片、密钥设置和备份；安装前请关闭软件。首次启动会先完整备份，再迁移数据库，库存余额及已有单据内容保留；三年历史保留规则继续按升级计划执行。
 
-本仓库备份源码、锁定的依赖版本、中文 OCR 模型及第三方许可。安装包通过 GitHub Release 保存；本机库存数据库、照片、开发工具、构建缓存和测试数据库不提交到仓库。验证范围及尚未验证的项目见 [验收报告](docs/验收报告.md) 和 [已知限制](docs/已知限制.md)。
+## 主要功能
 
-仓库原始说明：个人vibe codeing作品，仅供娱乐。
+- 类型、名称、完整规格、颜色、物料编码共同区分库存。标识随单保存。
+- 多张照片与重复货品保留独立原行，库存及作废按货品合计校验。
+- 本机检测表格、四角调整、透视校正、截图确认、云端识别、逐行核对和最终入库。
+- SQL 组合筛选、分页、分类型与单位汇总、自选列及流式 Excel 全部结果导出。
+- v1→v2 保护备份与事务迁移，旧资料待补全，历史快照不改写。
+- 滚动三年结转维护，保留当前库存；v1/v2 备份恢复，升级及卸载保留数据。
 
-## 构建
+API Key 在软件设置中填写，由 Windows 当前用户加密保存，不进入源码、库存备份、日志或安装包。服务地址和密钥地域需以百炼控制台为准。尚未配置真实密钥，云端两张样单准确率验收仍待验证。
 
-开发机需要 .NET SDK 10.0.400 与 PowerShell 7。SDK 版本见 `global.json`。Python 3.12.10、OCR、NSIS 3.11 等工具由引导脚本下载到项目自己的 `tools` / `ocr/.venv` 目录；不会要求用户电脑安装这些工具。
+## 开发与验证
 
-首次构建：
+SDK 版本在 `global.json`，NuGet 和本机备用 OCR 依赖均锁定。为精简目录，本地开发工具、虚拟环境及构建缓存已清理；首次重新构建使用 `-Bootstrap` 恢复 `tools`、`ocr/.venv`。软件使用不需要开发环境。
 
 ```powershell
 .\scripts\build.ps1 -Bootstrap
+.\scripts\build.ps1 -SkipOcrBuild
+.\scripts\verify.ps1 -OutputDirectory artifacts/desktop-smoke-v1.1
 ```
 
-若开发时需要本机代理，可以明确传入已开启的代理地址，例如：
+正常构建运行核心回归、20万行 SQL/汇总/分页/导出与取消测试、本机 OCR 样本及错误协议，生成自包含发布、NSIS 安装包和 SHA-256。`-SkipOcrBuild` 只复用未变更的已测试本机 OCR 工作程序。
 
 ```powershell
-.\scripts\build.ps1 -Bootstrap -DownloadProxy http://127.0.0.1:7890
+dotnet test tests/Stock.Tests/Stock.Tests.csproj -c Release --filter 'Category=Performance'
+.\scripts\install_upgrade_test.ps1
+dotnet run --project tests/Stock.DesktopHarness/Stock.DesktopHarness.csproj -c Release -- (Get-Location).Path
 ```
 
-代理参数只用于开发工具下载，命令结束即停止使用，不更改系统代理设置。正常使用软件不联网。
+安装升级测试用独立注册表、快捷方式、安装目录和测试数据，先安装保留的 v1 发布再升级到 v1.1，运行真实自包含应用迁移及回归，最后卸载测试副本；不改变真实安装。安装和卸载前后还会逐文件核对数据库、照片、模拟设置和保护备份的 SHA-256。已完成验证的精简证据保存在 `docs/验证证据/v1.1`。重新运行此测试须先构建 v1.1；本机保留的隔离 v1 测试安装包位于 `artifacts/v1.1/v1-test-setup.exe`，新克隆需从 v1 源码构建使用 `LocalStockManager.InstallTest` 注册标识的基准安装包。
 
-后续构建：
+人工样单基准在 `docs/样单人工基准.json`，`null` 代表模糊完整字段待人工确认。开发者可用 `scripts/evaluate_samples.py` 比较本地保存的识别结果，不会自动上传或读取密钥。模拟接口测试不能代替真实样单验收。
 
-```powershell
-.\scripts\build.ps1
-```
+## 数据与源码
 
-构建锁定 NuGet / Python 版本，验证模型和构建工具校验值，运行业务测试、真实 OCR 样本测试及错误协议测试，然后自包含发布并生成 NSIS 安装包和 SHA-256。许可原文与 GEOS 对应源码保存在 `licenses`。没有变更 OCR 工作程序时可使用 `-SkipOcrBuild` 复用已有已测试工作程序。
+默认数据目录为 `%LOCALAPPDATA%\LocalStockManager\Data`；密钥设置与保护备份位于其旁。数据库使用 `PRAGMA user_version=2`。未知结构和更高版本会拒绝打开，不重建空库掩盖错误。SQLite 事务内验证、更新余额；三年维护核对结转与保留流水后才提交。
 
-生成目录为 `artifacts/publish`，交付目录为 `dist`。自动化测试证据在 `artifacts/tests`、`artifacts/ocr`、`artifacts/desktop-smoke`。
+`src/Stock.Core` 包含识别协议、本地校验、事务记账、迁移、SQL 查询、流式导出和备份维护。`src/Stock.Desktop` 包含 WPF 核对、图片处理、密钥加密和用户流程。`ocr` 为用户主动选择的本机识别备用组件。第三方许可见 `THIRD-PARTY-NOTICES.md` 和 `licenses`。
 
-## 应用集成测试
-
-```powershell
-.\scripts\verify.ps1
-```
-
-测试使用独立项目子目录，从实际自包含应用调用真实 OCR，不触碰用户数据。验证实际 WPF 数量按钮、草稿取消、重复提交、渠道必选、图片处理、货单解析、OCR 超时、Excel 与备份恢复，并输出界面图片。
-
-未在干净测试电脑上验证的项目必须标为未验证。具体结果以 `dist/验收报告.md` 为准。
-
-## 数据结构与迁移
-
-`Stock.Core/StockService.Initialize` 负责事务性的结构版本0→1创建，仅在没有应用表的新数据库中执行。使用 `PRAGMA user_version=1` 标识当前结构；未知旧结构与高于1的数据库直接拒绝打开，保留原文件，禁止通过重建空库掩盖错误。本版不存在需要升级的已发布旧结构；以后增加迁移时必须先使用 SQLite 备份 API 做保护，再在事务中逐版迁移。
-
-每次打开检查数据库和库存不变量。所有写入都由业务服务的立即 SQLite 事务完成；UI 不写余额。五年清理先结转流水，再删除历史，原单与作废反向流水均参加库存核对。
-
-## 文件
-
-- `src/Stock.Core`：事务业务、图片引用、记录查询、结转、备份恢复、Excel、OCR 表格解析。
-- `src/Stock.Desktop`：WPF 界面、视图模型、数量组件、OCR 进程客户端、OpenCV 图片和摄像头。
-- `ocr/worker.py`：单行 JSON 标准输入输出协议，仅识别图片，不访问库存数据库。
-- `installer/installer.nsi`：当前用户安装、快捷方式、升级和卸载保留数据。
-- `docs`：执行规格、使用说明、限制和交付报告。
+仓库不提交用户数据库、照片、密钥、开发工具和构建缓存。

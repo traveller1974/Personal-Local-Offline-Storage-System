@@ -1,0 +1,43 @@
+{
+  "source": "直接对照原始照片及本机放大表格，不使用任何模型输出作为答案",
+  "status": "数量、类型、单位、顺序、编码、标识基准已建立；null代表无法可靠确认的完整字段，待人工补全",
+  "samples": [
+    {
+      "id": "sample-1",
+      "image": "D:\\识别用图像\\微信图片_20261006161004_48_75.jpg",
+      "rowCount": 17,
+      "sectionTotals": {"Vehicle":48,"Battery":30,"Charger":53,"Accessory":30},
+      "rows": [
+        {"originalOrder":"1","type":"Vehicle","name":null,"spec":"VQS-RC20/0800/12DGK0","color":null,"materialCode":"200039351","rawQuantity":"2","rawUnit":"PC","marker":"X1"},
+        {"originalOrder":"2","type":"Vehicle","name":null,"spec":"VQS-RC20/0800/12DGK0","color":"雾光灰","materialCode":"200039352","rawQuantity":"5","rawUnit":"PC","marker":"X1"},
+        {"originalOrder":"3","type":"Vehicle","name":null,"spec":null,"color":null,"materialCode":"200036397","rawQuantity":"8","rawUnit":"PC","marker":"A"},
+        {"originalOrder":"4","type":"Vehicle","name":null,"spec":null,"color":null,"materialCode":"200040204","rawQuantity":"5","rawUnit":"PC","marker":"X1"},
+        {"originalOrder":"5","type":"Vehicle","name":null,"spec":null,"color":null,"materialCode":"200036276","rawQuantity":"4","rawUnit":"PC","marker":"A"},
+        {"originalOrder":"6","type":"Vehicle","name":null,"spec":null,"color":null,"materialCode":"200038637","rawQuantity":"10","rawUnit":"PC","marker":"A"},
+        {"originalOrder":"7","type":"Vehicle","name":null,"spec":null,"color":null,"materialCode":"200035712","rawQuantity":"4","rawUnit":"PC","marker":"A"},
+        {"originalOrder":"8","type":"Vehicle","name":null,"spec":null,"color":null,"materialCode":"200035709","rawQuantity":"10","rawUnit":"PC","marker":"A"},
+        {"originalOrder":"1","type":"Battery","name":null,"spec":null,"color":"","materialCode":"210192740","rawQuantity":"12","rawUnit":"PAA","marker":"A"},
+        {"originalOrder":"2","type":"Battery","name":null,"spec":null,"color":"","materialCode":"210216778","rawQuantity":"18","rawUnit":"PAA","marker":"A"},
+        {"originalOrder":"1","type":"Charger","name":"充电器","spec":null,"color":"","materialCode":"210132461","rawQuantity":"25","rawUnit":"PC","marker":"A"},
+        {"originalOrder":"2","type":"Charger","name":"充电器","spec":null,"color":"","materialCode":"210132806","rawQuantity":"28","rawUnit":"PC","marker":"A"},
+        {"originalOrder":"1","type":"Accessory","name":"附件","spec":null,"color":"","materialCode":"210192761","rawQuantity":"10","rawUnit":"Z1","marker":"A"},
+        {"originalOrder":"2","type":"Accessory","name":"附件","spec":null,"color":"合金亮红 cmw","materialCode":"210192759","rawQuantity":"6","rawUnit":"Z1","marker":"A"},
+        {"originalOrder":"3","type":"Accessory","name":"附件","spec":null,"color":"雾光白","materialCode":"210197195","rawQuantity":"3","rawUnit":"Z1","marker":"A"},
+        {"originalOrder":"4","type":"Accessory","name":"附件","spec":null,"color":"钻石灰","materialCode":"210192758","rawQuantity":"8","rawUnit":"Z1","marker":"A"},
+        {"originalOrder":"5","type":"Accessory","name":"附件","spec":null,"color":null,"materialCode":"210200824","rawQuantity":"3","rawUnit":"Z1","marker":"A"}
+      ]
+    },
+    {
+      "id": "sample-2",
+      "image": "D:\\识别用图像\\微信图片_20261006161028_49_75.jpg",
+      "rowCount": 4,
+      "sectionTotals": {"Vehicle":5,"Battery":23,"Charger":0,"Accessory":1},
+      "rows": [
+        {"originalOrder":"1","type":"Vehicle","name":null,"spec":"VQS-RC20/0800/12DGP0","color":"曼洛紫","materialCode":"200039404","rawQuantity":"5","rawUnit":"PC","marker":"X1"},
+        {"originalOrder":"1","type":"Battery","name":null,"spec":null,"color":"","materialCode":"210011468","rawQuantity":"20","rawUnit":"PAA","marker":"A"},
+        {"originalOrder":"2","type":"Battery","name":null,"spec":null,"color":"","materialCode":"210192740","rawQuantity":"3","rawUnit":"PAA","marker":"A"},
+        {"originalOrder":"1","type":"Accessory","name":"附件","spec":null,"color":"芍药粉","materialCode":"210226106","rawQuantity":"1","rawUnit":"Z1","marker":"A"}
+      ]
+    }
+  ]
+}

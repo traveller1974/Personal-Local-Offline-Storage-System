@@ -28,10 +28,10 @@ public sealed record InvoiceParseResult(IReadOnlyList<QuantityColumn> QuantityCo
 /// <summary>Position based table extraction. Quantity is never inferred from price or amount.</summary>
 public static class InvoiceParser
 {
-    private static readonly HashSet<string> Names = ["品名", "商品名称", "货品名称", "产品名称", "名称"];
+    private static readonly HashSet<string> Names = ["品名", "物料名称", "商品名称", "货品名称", "产品名称", "名称"];
     private static readonly HashSet<string> Specs = ["规格", "型号", "规格型号", "规格/型号", "规格（型号）"];
-    private static readonly HashSet<string> Quantities = ["数量", "实收数量", "实收", "送货数量", "订货数量"];
-    private static readonly HashSet<string> Others = ["序号", "编号", "单位", "单价", "金额", "含税单价", "备注", "合计金额"];
+    private static readonly HashSet<string> Quantities = ["实发", "实发数量", "数量", "实收数量", "实收", "送货数量", "订货数量"];
+    private static readonly HashSet<string> Others = ["序号", "编号", "颜色", "计划", "欠发", "标识", "单位", "单价", "金额", "含税单价", "备注", "合计金额"];
     private static string Header(string text) => Rules.Clean(text).Replace(" ", "").Replace("\n", "").Trim(':', '：');
 
     public static InvoiceParseResult Parse(OcrResponse response, string? quantityColumnId = null)

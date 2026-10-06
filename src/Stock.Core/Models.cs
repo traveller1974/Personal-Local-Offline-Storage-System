@@ -15,31 +15,47 @@ public enum DocumentKind { Opening, Purchase, Sale, Transfer, Void }
 public enum RecordStatus { Valid, Voided }
 public enum StatusFilter { Valid, Voided, All }
 public enum DatePreset { Today, Yesterday, Last7Days, PreviousMonth, Last3Months, Last6Months, PreviousYear, Custom }
+public enum ProductType { Unknown, Vehicle, Battery, Charger, Accessory }
 
-public sealed record Product(long Id, string Name, string Spec, string Unit, bool Active, long Warehouse, long Store)
+public sealed record Product(long Id, string Name, string Spec, string Unit, bool Active, long Warehouse, long Store,
+    ProductType Type = ProductType.Unknown, string? Color = null, string? MaterialCode = null, bool Complete = false)
 {
     public long Total => Warehouse + Store;
-    public string Display => $"{Name}  {Spec}（{Unit}）";
+    public string TypeText => Rules.TypeName(Type);
+    public string ColorText => Color ?? "未记录";
+    public string Display => $"{TypeText} {Name}  {Spec} {ColorText} {MaterialCode}（{Unit}）";
 }
-public sealed record LineInput(long ProductId, long Quantity);
+public sealed record LineInput(long ProductId, long Quantity, int PhotoOrder = 0, string OriginalOrder = "", string Marker = "", string RawUnit = "", string RawName = "", string ReviewNote = "");
 public sealed record StockImpact(Product Product, long WarehouseDelta, long StoreDelta)
 {
     public long WarehouseAfter => Product.Warehouse + WarehouseDelta;
     public long StoreAfter => Product.Store + StoreDelta;
     public long TotalAfter => WarehouseAfter + StoreAfter;
 }
-public sealed record DocumentLine(long ProductId, string Name, string Spec, string Unit, long Quantity, long WarehouseDelta, long StoreDelta);
+public sealed record DocumentLine(long ProductId, string Name, string Spec, string Unit, long Quantity, long WarehouseDelta, long StoreDelta,
+    int LineOrder = 0, int PhotoOrder = 0, string OriginalOrder = "", ProductType Type = ProductType.Unknown,
+    string? Color = null, string? MaterialCode = null, string Marker = "", string RawUnit = "", string RawName = "", string ReviewNote = "")
+{ public string TypeText=>Type==ProductType.Unknown?"未记录":Rules.TypeName(Type);public string ColorText=>Color??"未记录";public string CodeText=>MaterialCode??"未记录"; }
 public sealed record DocumentRecord(string Id, string Number, DocumentKind Kind, string Channel, RecordStatus Status,
     DateOnly BusinessDate, string OccurredAt, string? OriginalId, string? VoidId, string? VoidAt, string Reason,
     IReadOnlyList<DocumentLine> Lines, IReadOnlyList<string> Attachments);
 public sealed record QueryFilter(DateOnly Start, DateOnly End, DocumentKind? Kind = null, string? Channel = null,
-    string Search = "", StatusFilter Status = StatusFilter.Valid, bool Inventory = false);
+    string Search = "", StatusFilter Status = StatusFilter.Valid, bool Inventory = false, ProductFilter? Products = null);
+public sealed record ProductFilter(IReadOnlyList<ProductType>? Types = null, IReadOnlyList<string>? Names = null,
+    IReadOnlyList<string>? Specs = null, IReadOnlyList<string>? Colors = null, string Code = "", bool MissingColor = false);
+public sealed record PageResult<T>(IReadOnlyList<T> Items, long Count);
+public sealed record SummaryRow(string Name, string Spec, string Color, ProductType Type, string Unit, long Warehouse, long Store,
+    long Quantity = 0, string Kind = "", string Channel = "") { public long Total => Warehouse + Store;public string TypeText=>Rules.TypeName(Type);public string KindText=>Enum.TryParse<DocumentKind>(Kind,out var k)?Rules.KindName(k):""; }
+public sealed record GroupFields(bool Name = true, bool Spec = true, bool Color = true);
 public sealed record MaintenanceResult(DateOnly Cutoff, int DeletedDocuments, int DeletedPhotos);
 
 public static class Rules
 {
+    public static string TypeName(ProductType type) => type switch { ProductType.Vehicle=>"成车", ProductType.Battery=>"电池", ProductType.Charger=>"充电器", ProductType.Accessory=>"附件", _=>"待补全" };
+    public static string Unit(ProductType type) => type switch { ProductType.Vehicle=>"辆", ProductType.Battery=>"组", ProductType.Charger=>"个", ProductType.Accessory=>"件", _=>throw new BusinessException("请选择四类货物类型。") };
     public const long MaxQuantity = int.MaxValue;
     public static string Identity(string value) => value.Normalize(NormalizationForm.FormKC).Trim().ToUpperInvariant();
+    public static string ExactIdentity(string value) => value.Normalize(NormalizationForm.FormC).Trim();
     public static string Clean(string value) => value.Normalize(NormalizationForm.FormKC).Trim();
     public static void Quantity(long value, bool zeroAllowed = false)
     {

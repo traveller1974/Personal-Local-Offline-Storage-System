@@ -1,0 +1,250 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="1361151d-7941-4c32-97bf-983273c22fef" name="xiaozulin@LAPTOP-HQMKD56I 2026-10-06 18:11:06" runUser="LAPTOP-HQMKD56I\xiaozulin" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-10-06T18:11:06.9578642+08:00" queuing="2026-10-06T18:11:06.9578646+08:00" start="2026-10-06T18:11:04.3960319+08:00" finish="2026-10-06T18:11:13.0104861+08:00" />
+  <TestSettings name="default" id="8509ef09-7a12-481d-8206-c80688bc406c">
+    <Deployment runDeploymentRoot="xiaozulin_LAPTOP-HQMKD56I_2026-10-06_18_11_06" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="2871be0e-31d1-4c6b-9f78-36ea7e7a1c5d" testId="32cb5dc6-d7e3-7c27-fc50-57ff4f4eec2b" testName="Stock.Tests.IntegrityTests.RestoreRejectsIncompatibleDatabaseEvenWithValidFileChecksum" computerName="LAPTOP-HQMKD56I" duration="00:00:00.1122407" startTime="2026-10-06T18:11:07.5819033+08:00" endTime="2026-10-06T18:11:07.6941549+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2871be0e-31d1-4c6b-9f78-36ea7e7a1c5d" />
+    <UnitTestResult executionId="7049f4e7-1f26-4e26-a51d-60333b2e5fd1" testId="35bba23c-a161-4250-7748-0fa1e7861252" testName="Stock.Tests.InvoiceTests.A09_IntegerTextIsStrict(text: &quot;５&quot;, valid: False)" computerName="LAPTOP-HQMKD56I" duration="00:00:00.0000075" startTime="2026-10-06T18:11:06.9047433+08:00" endTime="2026-10-06T18:11:06.9047924+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="7049f4e7-1f26-4e26-a51d-60333b2e5fd1" />
+    <UnitTestResult executionId="afcb87c1-c904-43c3-95a1-c5550e7ccc49" testId="d5061064-787f-267d-89e6-df406ce08c4f" testName="Stock.Tests.BusinessTests.A11_PreviewAndDuplicateSubmit" computerName="LAPTOP-HQMKD56I" duration="00:00:00.0599448" startTime="2026-10-06T18:11:08.0294620+08:00" endTime="2026-10-06T18:11:08.0882362+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="afcb87c1-c904-43c3-95a1-c5550e7ccc49" />
+    <UnitTestResult executionId="09e30635-1f1d-4aac-b843-2152de1a5aec" testId="dd7f3cea-8ae3-df4c-9384-8ebbc9c7421c" testName="Stock.Tests.InvoiceTests.A13_QuantityIsNotPriceAndTotalIsExcluded" computerName="LAPTOP-HQMKD56I" duration="00:00:00.0291141" startTime="2026-10-06T18:11:06.9296549+08:00" endTime="2026-10-06T18:11:06.9297203+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="09e30635-1f1d-4aac-b843-2152de1a5aec" />
+    <UnitTestResult executionId="56f7e10e-46f2-4403-aa7b-10cac2421560" testId="786bd73a-2562-c480-a093-fdc10b821955" testName="Stock.Tests.BusinessTests.A16_DatesOn20261005" computerName="LAPTOP-HQMKD56I" duration="00:00:00.0274336" startTime="2026-10-06T18:11:12.8982703+08:00" endTime="2026-10-06T18:11:12.9253162+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="56f7e10e-46f2-4403-aa7b-10cac2421560" />
+    <UnitTestResult executionId="2388f46e-3ae0-43ac-8d4f-209859c88587" testId="92dae8dd-2171-5f49-b09a-1248ebb0b65a" testName="Stock.Tests.BusinessTests.A09_OverflowAndZeroOpening" computerName="LAPTOP-HQMKD56I" duration="00:00:00.0571059" startTime="2026-10-06T18:11:08.1660308+08:00" endTime="2026-10-06T18:11:08.2230644+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2388f46e-3ae0-43ac-8d4f-209859c88587" />
+    <UnitTestResult executionId="5594d9eb-d3cf-4436-aaf5-3796ed56eac0" testId="e109f4f6-0a3c-8ad1-ca90-67f59e1116f0" testName="Stock.Tests.BusinessTests.A12_FailureRollsBackAllWrites" computerName="LAPTOP-HQMKD56I" duration="00:00:00.0580219" startTime="2026-10-06T18:11:07.7534985+08:00" endTime="2026-10-06T18:11:07.8113319+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="5594d9eb-d3cf-4436-aaf5-3796ed56eac0" />
+    <UnitTestResult executionId="ff1989e7-0cb9-4b94-a70e-e219886175cf" testId="aac5efcc-487e-ef14-b7ed-21a8d12d6c9d" testName="Stock.Tests.BusinessTests.A21_BackupRestoreAndDamagedArchive" computerName="LAPTOP-HQMKD56I" duration="00:00:00.5014236" startTime="2026-10-06T18:11:06.7283015+08:00" endTime="2026-10-06T18:11:07.2327952+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ff1989e7-0cb9-4b94-a70e-e219886175cf" />
+    <UnitTestResult executionId="4e3c312f-3856-4ea5-a7c8-2a7015148c9a" testId="0b4dfdd6-b30a-c1ef-a4df-9b4627f13744" testName="Stock.Tests.IntegrityTests.BackupPreservesPhotoAndRestoreRejectsMissingReferencedPhoto" computerName="LAPTOP-HQMKD56I" duration="00:00:00.1863621" startTime="2026-10-06T18:11:07.3257807+08:00" endTime="2026-10-06T18:11:07.5047415+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4e3c312f-3856-4ea5-a7c8-2a7015148c9a" />
+    <UnitTestResult executionId="0730e0af-80dc-4173-be8f-bf93ebb9bd8c" testId="2161b961-8675-b757-6592-a0a7e87d346d" testName="Stock.Tests.BusinessTests.A09_InvalidIntegerQuantity(q: -1)" computerName="LAPTOP-HQMKD56I" duration="00:00:00.0335421" startTime="2026-10-06T18:11:07.3990969+08:00" endTime="2026-10-06T18:11:07.4325606+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="0730e0af-80dc-4173-be8f-bf93ebb9bd8c" />
+    <UnitTestResult executionId="2bc1e5c9-e2fa-4034-b83c-bc05b76fce88" testId="0d5bc3fe-16d3-f78d-06ea-ed5004b1494b" testName="Stock.Tests.InvoiceTests.A09_IntegerTextIsStrict(text: &quot;12&quot;, valid: True)" computerName="LAPTOP-HQMKD56I" duration="00:00:00.1605703" startTime="2026-10-06T18:11:06.7283486+08:00" endTime="2026-10-06T18:11:06.8964317+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2bc1e5c9-e2fa-4034-b83c-bc05b76fce88" />
+    <UnitTestResult executionId="cf659549-b0fb-490b-bf89-79bfd0c2088c" testId="122f1111-2a16-c086-7d2b-e0ee1cb6a4d6" testName="Stock.Tests.IntegrityTests.MissingBalanceCannotPassIntegrityCheck" computerName="LAPTOP-HQMKD56I" duration="00:00:00.0362044" startTime="2026-10-06T18:11:07.2821461+08:00" endTime="2026-10-06T18:11:07.3182871+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="cf659549-b0fb-490b-bf89-79bfd0c2088c" />
+    <UnitTestResult executionId="83ebadab-3b06-4dc8-89c5-3ec1282997b2" testId="0bf44514-6320-ce0e-1bcd-58f13bd4a3c5" testName="Stock.Tests.InvoiceTests.A14_MultipleQuantityColumnsRequireExplicitSelection" computerName="LAPTOP-HQMKD56I" duration="00:00:00.0012457" startTime="2026-10-06T18:11:06.9300593+08:00" endTime="2026-10-06T18:11:06.9301068+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="83ebadab-3b06-4dc8-89c5-3ec1282997b2" />
+    <UnitTestResult executionId="ef7b5a63-f798-4d2a-8f92-668f62468191" testId="ab20d40b-d764-e114-9f11-04fe3a22611d" testName="Stock.Tests.InvoiceTests.A09_IntegerTextIsStrict(text: &quot;1.5&quot;, valid: False)" computerName="LAPTOP-HQMKD56I" duration="00:00:00.0000046" startTime="2026-10-06T18:11:06.9052295+08:00" endTime="2026-10-06T18:11:06.9052841+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ef7b5a63-f798-4d2a-8f92-668f62468191" />
+    <UnitTestResult executionId="7fbb1d4b-8875-411c-8147-b94af350e734" testId="b52f8691-1a3b-5b1f-35af-a3cf2da7d357" testName="Stock.Tests.BusinessTests.A19_MaintenanceFailureLeavesPhotosAndDatabase" computerName="LAPTOP-HQMKD56I" duration="00:00:00.0604580" startTime="2026-10-06T18:11:07.6928462+08:00" endTime="2026-10-06T18:11:07.7531485+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="7fbb1d4b-8875-411c-8147-b94af350e734" />
+    <UnitTestResult executionId="97e61de3-144a-45f3-a68c-32e89f322d1d" testId="1c25a96d-8a12-6c80-b605-cffe77c5469a" testName="Stock.Tests.BusinessTests.A07_WholeVoidRollsBackOnOneInsufficientLine" computerName="LAPTOP-HQMKD56I" duration="00:00:00.0586821" startTime="2026-10-06T18:11:07.2329463+08:00" endTime="2026-10-06T18:11:07.2913768+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="97e61de3-144a-45f3-a68c-32e89f322d1d" />
+    <UnitTestResult executionId="5d0e5822-481a-4a8b-aad2-8495e621f8e5" testId="841173cf-a8fb-d90f-c483-daf0aa5ce476" testName="Stock.Tests.BusinessTests.A09_InvalidIntegerQuantity(q: 0)" computerName="LAPTOP-HQMKD56I" duration="00:00:00.0282820" startTime="2026-10-06T18:11:07.3418207+08:00" endTime="2026-10-06T18:11:07.3702059+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="5d0e5822-481a-4a8b-aad2-8495e621f8e5" />
+    <UnitTestResult executionId="e32ec75e-c19d-46c4-a51e-fa9f52396346" testId="2487d500-5cf2-70bd-1d72-5bd503f298c1" testName="Stock.Tests.InvoiceTests.A09_IntegerTextIsStrict(text: &quot;-1&quot;, valid: False)" computerName="LAPTOP-HQMKD56I" duration="00:00:00.0002220" startTime="2026-10-06T18:11:06.9042175+08:00" endTime="2026-10-06T18:11:06.9042888+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e32ec75e-c19d-46c4-a51e-fa9f52396346" />
+    <UnitTestResult executionId="97188a2f-d6a3-4b58-ba61-bec19113a240" testId="69767b00-e7c2-1aa6-090e-1c98023b9845" testName="Stock.Tests.IntegrityTests.ConcurrentIndependentServicesCannotOversell" computerName="LAPTOP-HQMKD56I" duration="00:00:00.5480860" startTime="2026-10-06T18:11:06.7269923+08:00" endTime="2026-10-06T18:11:07.2811521+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="97188a2f-d6a3-4b58-ba61-bec19113a240" />
+    <UnitTestResult executionId="121c96ed-cfa5-4bda-93d7-09062a3e9d05" testId="db15a7ef-a0cc-3be2-c10a-f07145d3079c" testName="Stock.Tests.BusinessTests.A19_CarryForwardPreservesBalanceAndDeletesOnlyExpired" computerName="LAPTOP-HQMKD56I" duration="00:00:00.0849913" startTime="2026-10-06T18:11:07.4326937+08:00" endTime="2026-10-06T18:11:07.5177501+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="121c96ed-cfa5-4bda-93d7-09062a3e9d05" />
+    <UnitTestResult executionId="396801fe-ae0e-42ac-a626-65b8c6140c20" testId="9c9d6a7a-44d0-85ec-e1c3-a977c4ba1c74" testName="Stock.Tests.InvoiceTests.A09_IntegerTextIsStrict(text: &quot;&quot;, valid: False)" computerName="LAPTOP-HQMKD56I" duration="00:00:00.0000065" startTime="2026-10-06T18:11:06.9049931+08:00" endTime="2026-10-06T18:11:06.9050373+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="396801fe-ae0e-42ac-a626-65b8c6140c20" />
+    <UnitTestResult executionId="f6955297-37b7-4a7f-b660-409c149145b2" testId="d1505a9e-e3d9-e588-cf8a-4b376dce9658" testName="Stock.Tests.InvoiceTests.A09_IntegerTextIsStrict(text: &quot;1e3&quot;, valid: False)" computerName="LAPTOP-HQMKD56I" duration="00:00:00.0000017" startTime="2026-10-06T18:11:06.9048913+08:00" endTime="2026-10-06T18:11:06.9049258+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="f6955297-37b7-4a7f-b660-409c149145b2" />
+    <UnitTestResult executionId="bf9045cb-fe2c-440e-afa3-c3d2cc4529f7" testId="94fce09c-c284-7278-b8c6-3bfd9fcd8672" testName="Stock.Tests.BusinessTests.A21_UnsupportedSchemaDoesNotResetData" computerName="LAPTOP-HQMKD56I" duration="00:00:00.0567285" startTime="2026-10-06T18:11:07.8116585+08:00" endTime="2026-10-06T18:11:07.8682254+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="bf9045cb-fe2c-440e-afa3-c3d2cc4529f7" />
+    <UnitTestResult executionId="54ed743a-f681-4c64-9bcc-1157713a8eb6" testId="2d9cf030-afbf-d30a-a640-22e37aefbfe5" testName="Stock.Tests.IntegrityTests.RestoreRejectsZipTraversalBeforeChangingCurrentData" computerName="LAPTOP-HQMKD56I" duration="00:00:00.0393179" startTime="2026-10-06T18:11:07.5425513+08:00" endTime="2026-10-06T18:11:07.5817657+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="54ed743a-f681-4c64-9bcc-1157713a8eb6" />
+    <UnitTestResult executionId="a7d1d8ef-24dd-4809-952c-d5ad8a73b3c4" testId="eccf3bd2-94f2-bfdc-8498-709e7be812b8" testName="Stock.Tests.BusinessTests.A17To18_ExcelExportsAllAndExcludesVoided" computerName="LAPTOP-HQMKD56I" duration="00:00:04.6743404" startTime="2026-10-06T18:11:08.2233702+08:00" endTime="2026-10-06T18:11:12.8976050+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="a7d1d8ef-24dd-4809-952c-d5ad8a73b3c4" />
+    <UnitTestResult executionId="40963ce5-5967-4bda-b759-a7577d539718" testId="1f9deb10-501f-dd86-c4fd-d69738ed7112" testName="Stock.Tests.BusinessTests.A10_DuplicateLinesCannotBypassStock" computerName="LAPTOP-HQMKD56I" duration="00:00:00.0398294" startTime="2026-10-06T18:11:07.5181105+08:00" endTime="2026-10-06T18:11:07.5576089+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="40963ce5-5967-4bda-b759-a7577d539718" />
+    <UnitTestResult executionId="4bc9606b-e846-4209-852a-bed2a66da319" testId="09a4d4d9-a84e-6b0b-22c9-662a9e1b9845" testName="Stock.Tests.BusinessTests.A01To05_OpeningPurchaseSaleAndTransfer" computerName="LAPTOP-HQMKD56I" duration="00:00:00.0858578" startTime="2026-10-06T18:11:07.5583229+08:00" endTime="2026-10-06T18:11:07.6436790+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4bc9606b-e846-4209-852a-bed2a66da319" />
+    <UnitTestResult executionId="4fafde83-f1f8-4170-9c61-96a84c534a28" testId="88140edc-fb6d-630d-d960-ed07a9c4b368" testName="Stock.Tests.InvoiceTests.A09_IntegerTextIsStrict(text: &quot;2147483648&quot;, valid: False)" computerName="LAPTOP-HQMKD56I" duration="00:00:00.0000081" startTime="2026-10-06T18:11:06.9051176+08:00" endTime="2026-10-06T18:11:06.9051632+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4fafde83-f1f8-4170-9c61-96a84c534a28" />
+    <UnitTestResult executionId="8cafbb9f-a576-4058-ab82-b7952ee2330c" testId="4d82524a-c9dc-6c38-81ed-013556db5af9" testName="Stock.Tests.BusinessTests.A22_SnapshotsIdentityAndDisable" computerName="LAPTOP-HQMKD56I" duration="00:00:00.0705991" startTime="2026-10-06T18:11:07.9576847+08:00" endTime="2026-10-06T18:11:08.0281640+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="8cafbb9f-a576-4058-ab82-b7952ee2330c" />
+    <UnitTestResult executionId="8c50fc23-56d9-40c1-b9a6-593a6d7630ed" testId="2213e686-4b13-fa0a-8ee8-7cf5826ea16a" testName="Stock.Tests.BusinessTests.A20_OldOriginalAndRetainedReversal" computerName="LAPTOP-HQMKD56I" duration="00:00:00.0773247" startTime="2026-10-06T18:11:08.0885351+08:00" endTime="2026-10-06T18:11:08.1657229+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="8c50fc23-56d9-40c1-b9a6-593a6d7630ed" />
+    <UnitTestResult executionId="cbc19b7b-e1fb-4774-a2ff-b7d8676b0b66" testId="cc232372-67e0-b7d4-dbdc-7c43ec6a10c2" testName="Stock.Tests.BusinessTests.A09_InvalidIntegerQuantity(q: 2147483648)" computerName="LAPTOP-HQMKD56I" duration="00:00:00.0286734" startTime="2026-10-06T18:11:07.3704615+08:00" endTime="2026-10-06T18:11:07.3989835+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="cbc19b7b-e1fb-4774-a2ff-b7d8676b0b66" />
+    <UnitTestResult executionId="7a7a2c53-0398-4310-8a71-69e765943ed5" testId="cf95c704-07b4-f186-b04b-ea9171756793" testName="Stock.Tests.InvoiceTests.A13_NoQuantityHeaderDoesNotInferAmount" computerName="LAPTOP-HQMKD56I" duration="00:00:00.0004195" startTime="2026-10-06T18:11:06.9350817+08:00" endTime="2026-10-06T18:11:06.9352952+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="7a7a2c53-0398-4310-8a71-69e765943ed5" />
+    <UnitTestResult executionId="d176716b-9489-4b38-b5d4-2c5394cfd1d9" testId="39578307-bd13-cd8b-f244-9ab8faa9d5c2" testName="Stock.Tests.BusinessTests.A06To08_VoidBalancesAndLedger" computerName="LAPTOP-HQMKD56I" duration="00:00:00.0890135" startTime="2026-10-06T18:11:07.8685311+08:00" endTime="2026-10-06T18:11:07.9573969+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d176716b-9489-4b38-b5d4-2c5394cfd1d9" />
+    <UnitTestResult executionId="dcbdc31c-0e0f-48fa-b29b-70bf48f530a8" testId="42aa36bb-33ce-e14c-8e2c-c54e5501e603" testName="Stock.Tests.BusinessTests.A16_LeapYearAndYearBoundary" computerName="LAPTOP-HQMKD56I" duration="00:00:00.0487030" startTime="2026-10-06T18:11:07.6440266+08:00" endTime="2026-10-06T18:11:07.6925073+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="dcbdc31c-0e0f-48fa-b29b-70bf48f530a8" />
+    <UnitTestResult executionId="7507b3c4-1d05-43c6-811f-9ef59efaa1a2" testId="4a30438a-c339-85f8-8a65-962f4c27235b" testName="Stock.Tests.IntegrityTests.ClockRollbackCannotWriteAlreadyDeletedPeriod" computerName="LAPTOP-HQMKD56I" duration="00:00:00.0374917" startTime="2026-10-06T18:11:07.5048835+08:00" endTime="2026-10-06T18:11:07.5424068+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="7507b3c4-1d05-43c6-811f-9ef59efaa1a2" />
+    <UnitTestResult executionId="b58aacb2-6ed9-4622-bb89-75a13b1c4bcc" testId="991a1380-4364-2293-f241-c667eac11889" testName="Stock.Tests.InvoiceTests.A14_MissingDecimalAndLowConfidenceRemainFlagged" computerName="LAPTOP-HQMKD56I" duration="00:00:00.0071923" startTime="2026-10-06T18:11:06.9302170+08:00" endTime="2026-10-06T18:11:06.9348939+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b58aacb2-6ed9-4622-bb89-75a13b1c4bcc" />
+    <UnitTestResult executionId="0af91811-270b-41a0-b7ed-faf25724df67" testId="ae2d7a90-da61-1f21-f6c6-ef8111228f05" testName="Stock.Tests.BusinessTests.ChannelValidationAndReopen" computerName="LAPTOP-HQMKD56I" duration="00:00:00.0502268" startTime="2026-10-06T18:11:07.2915268+08:00" endTime="2026-10-06T18:11:07.3416857+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="0af91811-270b-41a0-b7ed-faf25724df67" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="Stock.Tests.BusinessTests.A19_MaintenanceFailureLeavesPhotosAndDatabase" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\debug\net10.0\stock.tests.dll" id="b52f8691-1a3b-5b1f-35af-a3cf2da7d357">
+      <Execution id="7fbb1d4b-8875-411c-8147-b94af350e734" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Debug\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.BusinessTests" name="A19_MaintenanceFailureLeavesPhotosAndDatabase" />
+    </UnitTest>
+    <UnitTest name="Stock.Tests.BusinessTests.A19_CarryForwardPreservesBalanceAndDeletesOnlyExpired" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\debug\net10.0\stock.tests.dll" id="db15a7ef-a0cc-3be2-c10a-f07145d3079c">
+      <Execution id="121c96ed-cfa5-4bda-93d7-09062a3e9d05" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Debug\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.BusinessTests" name="A19_CarryForwardPreservesBalanceAndDeletesOnlyExpired" />
+    </UnitTest>
+    <UnitTest name="Stock.Tests.InvoiceTests.A09_IntegerTextIsStrict(text: &quot;1.5&quot;, valid: False)" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\debug\net10.0\stock.tests.dll" id="ab20d40b-d764-e114-9f11-04fe3a22611d">
+      <Execution id="ef7b5a63-f798-4d2a-8f92-668f62468191" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Debug\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.InvoiceTests" name="A09_IntegerTextIsStrict" />
+    </UnitTest>
+    <UnitTest name="Stock.Tests.BusinessTests.ChannelValidationAndReopen" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\debug\net10.0\stock.tests.dll" id="ae2d7a90-da61-1f21-f6c6-ef8111228f05">
+      <Execution id="0af91811-270b-41a0-b7ed-faf25724df67" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Debug\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.BusinessTests" name="ChannelValidationAndReopen" />
+    </UnitTest>
+    <UnitTest name="Stock.Tests.BusinessTests.A20_OldOriginalAndRetainedReversal" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\debug\net10.0\stock.tests.dll" id="2213e686-4b13-fa0a-8ee8-7cf5826ea16a">
+      <Execution id="8c50fc23-56d9-40c1-b9a6-593a6d7630ed" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Debug\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.BusinessTests" name="A20_OldOriginalAndRetainedReversal" />
+    </UnitTest>
+    <UnitTest name="Stock.Tests.InvoiceTests.A09_IntegerTextIsStrict(text: &quot;12&quot;, valid: True)" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\debug\net10.0\stock.tests.dll" id="0d5bc3fe-16d3-f78d-06ea-ed5004b1494b">
+      <Execution id="2bc1e5c9-e2fa-4034-b83c-bc05b76fce88" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Debug\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.InvoiceTests" name="A09_IntegerTextIsStrict" />
+    </UnitTest>
+    <UnitTest name="Stock.Tests.InvoiceTests.A09_IntegerTextIsStrict(text: &quot;1e3&quot;, valid: False)" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\debug\net10.0\stock.tests.dll" id="d1505a9e-e3d9-e588-cf8a-4b376dce9658">
+      <Execution id="f6955297-37b7-4a7f-b660-409c149145b2" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Debug\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.InvoiceTests" name="A09_IntegerTextIsStrict" />
+    </UnitTest>
+    <UnitTest name="Stock.Tests.IntegrityTests.BackupPreservesPhotoAndRestoreRejectsMissingReferencedPhoto" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\debug\net10.0\stock.tests.dll" id="0b4dfdd6-b30a-c1ef-a4df-9b4627f13744">
+      <Execution id="4e3c312f-3856-4ea5-a7c8-2a7015148c9a" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Debug\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.IntegrityTests" name="BackupPreservesPhotoAndRestoreRejectsMissingReferencedPhoto" />
+    </UnitTest>
+    <UnitTest name="Stock.Tests.InvoiceTests.A14_MissingDecimalAndLowConfidenceRemainFlagged" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\debug\net10.0\stock.tests.dll" id="991a1380-4364-2293-f241-c667eac11889">
+      <Execution id="b58aacb2-6ed9-4622-bb89-75a13b1c4bcc" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Debug\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.InvoiceTests" name="A14_MissingDecimalAndLowConfidenceRemainFlagged" />
+    </UnitTest>
+    <UnitTest name="Stock.Tests.InvoiceTests.A09_IntegerTextIsStrict(text: &quot;５&quot;, valid: False)" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\debug\net10.0\stock.tests.dll" id="35bba23c-a161-4250-7748-0fa1e7861252">
+      <Execution id="7049f4e7-1f26-4e26-a51d-60333b2e5fd1" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Debug\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.InvoiceTests" name="A09_IntegerTextIsStrict" />
+    </UnitTest>
+    <UnitTest name="Stock.Tests.IntegrityTests.MissingBalanceCannotPassIntegrityCheck" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\debug\net10.0\stock.tests.dll" id="122f1111-2a16-c086-7d2b-e0ee1cb6a4d6">
+      <Execution id="cf659549-b0fb-490b-bf89-79bfd0c2088c" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Debug\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.IntegrityTests" name="MissingBalanceCannotPassIntegrityCheck" />
+    </UnitTest>
+    <UnitTest name="Stock.Tests.IntegrityTests.RestoreRejectsZipTraversalBeforeChangingCurrentData" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\debug\net10.0\stock.tests.dll" id="2d9cf030-afbf-d30a-a640-22e37aefbfe5">
+      <Execution id="54ed743a-f681-4c64-9bcc-1157713a8eb6" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Debug\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.IntegrityTests" name="RestoreRejectsZipTraversalBeforeChangingCurrentData" />
+    </UnitTest>
+    <UnitTest name="Stock.Tests.BusinessTests.A10_DuplicateLinesCannotBypassStock" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\debug\net10.0\stock.tests.dll" id="1f9deb10-501f-dd86-c4fd-d69738ed7112">
+      <Execution id="40963ce5-5967-4bda-b759-a7577d539718" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Debug\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.BusinessTests" name="A10_DuplicateLinesCannotBypassStock" />
+    </UnitTest>
+    <UnitTest name="Stock.Tests.InvoiceTests.A13_NoQuantityHeaderDoesNotInferAmount" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\debug\net10.0\stock.tests.dll" id="cf95c704-07b4-f186-b04b-ea9171756793">
+      <Execution id="7a7a2c53-0398-4310-8a71-69e765943ed5" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Debug\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.InvoiceTests" name="A13_NoQuantityHeaderDoesNotInferAmount" />
+    </UnitTest>
+    <UnitTest name="Stock.Tests.BusinessTests.A09_InvalidIntegerQuantity(q: -1)" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\debug\net10.0\stock.tests.dll" id="2161b961-8675-b757-6592-a0a7e87d346d">
+      <Execution id="0730e0af-80dc-4173-be8f-bf93ebb9bd8c" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Debug\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.BusinessTests" name="A09_InvalidIntegerQuantity" />
+    </UnitTest>
+    <UnitTest name="Stock.Tests.IntegrityTests.ConcurrentIndependentServicesCannotOversell" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\debug\net10.0\stock.tests.dll" id="69767b00-e7c2-1aa6-090e-1c98023b9845">
+      <Execution id="97188a2f-d6a3-4b58-ba61-bec19113a240" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Debug\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.IntegrityTests" name="ConcurrentIndependentServicesCannotOversell" />
+    </UnitTest>
+    <UnitTest name="Stock.Tests.BusinessTests.A06To08_VoidBalancesAndLedger" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\debug\net10.0\stock.tests.dll" id="39578307-bd13-cd8b-f244-9ab8faa9d5c2">
+      <Execution id="d176716b-9489-4b38-b5d4-2c5394cfd1d9" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Debug\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.BusinessTests" name="A06To08_VoidBalancesAndLedger" />
+    </UnitTest>
+    <UnitTest name="Stock.Tests.InvoiceTests.A09_IntegerTextIsStrict(text: &quot;&quot;, valid: False)" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\debug\net10.0\stock.tests.dll" id="9c9d6a7a-44d0-85ec-e1c3-a977c4ba1c74">
+      <Execution id="396801fe-ae0e-42ac-a626-65b8c6140c20" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Debug\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.InvoiceTests" name="A09_IntegerTextIsStrict" />
+    </UnitTest>
+    <UnitTest name="Stock.Tests.BusinessTests.A09_OverflowAndZeroOpening" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\debug\net10.0\stock.tests.dll" id="92dae8dd-2171-5f49-b09a-1248ebb0b65a">
+      <Execution id="2388f46e-3ae0-43ac-8d4f-209859c88587" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Debug\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.BusinessTests" name="A09_OverflowAndZeroOpening" />
+    </UnitTest>
+    <UnitTest name="Stock.Tests.BusinessTests.A16_LeapYearAndYearBoundary" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\debug\net10.0\stock.tests.dll" id="42aa36bb-33ce-e14c-8e2c-c54e5501e603">
+      <Execution id="dcbdc31c-0e0f-48fa-b29b-70bf48f530a8" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Debug\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.BusinessTests" name="A16_LeapYearAndYearBoundary" />
+    </UnitTest>
+    <UnitTest name="Stock.Tests.IntegrityTests.RestoreRejectsIncompatibleDatabaseEvenWithValidFileChecksum" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\debug\net10.0\stock.tests.dll" id="32cb5dc6-d7e3-7c27-fc50-57ff4f4eec2b">
+      <Execution id="2871be0e-31d1-4c6b-9f78-36ea7e7a1c5d" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Debug\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.IntegrityTests" name="RestoreRejectsIncompatibleDatabaseEvenWithValidFileChecksum" />
+    </UnitTest>
+    <UnitTest name="Stock.Tests.InvoiceTests.A09_IntegerTextIsStrict(text: &quot;2147483648&quot;, valid: False)" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\debug\net10.0\stock.tests.dll" id="88140edc-fb6d-630d-d960-ed07a9c4b368">
+      <Execution id="4fafde83-f1f8-4170-9c61-96a84c534a28" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Debug\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.InvoiceTests" name="A09_IntegerTextIsStrict" />
+    </UnitTest>
+    <UnitTest name="Stock.Tests.InvoiceTests.A14_MultipleQuantityColumnsRequireExplicitSelection" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\debug\net10.0\stock.tests.dll" id="0bf44514-6320-ce0e-1bcd-58f13bd4a3c5">
+      <Execution id="83ebadab-3b06-4dc8-89c5-3ec1282997b2" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Debug\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.InvoiceTests" name="A14_MultipleQuantityColumnsRequireExplicitSelection" />
+    </UnitTest>
+    <UnitTest name="Stock.Tests.BusinessTests.A01To05_OpeningPurchaseSaleAndTransfer" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\debug\net10.0\stock.tests.dll" id="09a4d4d9-a84e-6b0b-22c9-662a9e1b9845">
+      <Execution id="4bc9606b-e846-4209-852a-bed2a66da319" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Debug\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.BusinessTests" name="A01To05_OpeningPurchaseSaleAndTransfer" />
+    </UnitTest>
+    <UnitTest name="Stock.Tests.IntegrityTests.ClockRollbackCannotWriteAlreadyDeletedPeriod" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\debug\net10.0\stock.tests.dll" id="4a30438a-c339-85f8-8a65-962f4c27235b">
+      <Execution id="7507b3c4-1d05-43c6-811f-9ef59efaa1a2" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Debug\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.IntegrityTests" name="ClockRollbackCannotWriteAlreadyDeletedPeriod" />
+    </UnitTest>
+    <UnitTest name="Stock.Tests.InvoiceTests.A13_QuantityIsNotPriceAndTotalIsExcluded" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\debug\net10.0\stock.tests.dll" id="dd7f3cea-8ae3-df4c-9384-8ebbc9c7421c">
+      <Execution id="09e30635-1f1d-4aac-b843-2152de1a5aec" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Debug\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.InvoiceTests" name="A13_QuantityIsNotPriceAndTotalIsExcluded" />
+    </UnitTest>
+    <UnitTest name="Stock.Tests.BusinessTests.A21_BackupRestoreAndDamagedArchive" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\debug\net10.0\stock.tests.dll" id="aac5efcc-487e-ef14-b7ed-21a8d12d6c9d">
+      <Execution id="ff1989e7-0cb9-4b94-a70e-e219886175cf" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Debug\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.BusinessTests" name="A21_BackupRestoreAndDamagedArchive" />
+    </UnitTest>
+    <UnitTest name="Stock.Tests.BusinessTests.A12_FailureRollsBackAllWrites" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\debug\net10.0\stock.tests.dll" id="e109f4f6-0a3c-8ad1-ca90-67f59e1116f0">
+      <Execution id="5594d9eb-d3cf-4436-aaf5-3796ed56eac0" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Debug\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.BusinessTests" name="A12_FailureRollsBackAllWrites" />
+    </UnitTest>
+    <UnitTest name="Stock.Tests.BusinessTests.A07_WholeVoidRollsBackOnOneInsufficientLine" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\debug\net10.0\stock.tests.dll" id="1c25a96d-8a12-6c80-b605-cffe77c5469a">
+      <Execution id="97e61de3-144a-45f3-a68c-32e89f322d1d" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Debug\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.BusinessTests" name="A07_WholeVoidRollsBackOnOneInsufficientLine" />
+    </UnitTest>
+    <UnitTest name="Stock.Tests.BusinessTests.A17To18_ExcelExportsAllAndExcludesVoided" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\debug\net10.0\stock.tests.dll" id="eccf3bd2-94f2-bfdc-8498-709e7be812b8">
+      <Execution id="a7d1d8ef-24dd-4809-952c-d5ad8a73b3c4" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Debug\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.BusinessTests" name="A17To18_ExcelExportsAllAndExcludesVoided" />
+    </UnitTest>
+    <UnitTest name="Stock.Tests.BusinessTests.A21_UnsupportedSchemaDoesNotResetData" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\debug\net10.0\stock.tests.dll" id="94fce09c-c284-7278-b8c6-3bfd9fcd8672">
+      <Execution id="bf9045cb-fe2c-440e-afa3-c3d2cc4529f7" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Debug\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.BusinessTests" name="A21_UnsupportedSchemaDoesNotResetData" />
+    </UnitTest>
+    <UnitTest name="Stock.Tests.BusinessTests.A16_DatesOn20261005" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\debug\net10.0\stock.tests.dll" id="786bd73a-2562-c480-a093-fdc10b821955">
+      <Execution id="56f7e10e-46f2-4403-aa7b-10cac2421560" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Debug\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.BusinessTests" name="A16_DatesOn20261005" />
+    </UnitTest>
+    <UnitTest name="Stock.Tests.BusinessTests.A09_InvalidIntegerQuantity(q: 0)" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\debug\net10.0\stock.tests.dll" id="841173cf-a8fb-d90f-c483-daf0aa5ce476">
+      <Execution id="5d0e5822-481a-4a8b-aad2-8495e621f8e5" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Debug\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.BusinessTests" name="A09_InvalidIntegerQuantity" />
+    </UnitTest>
+    <UnitTest name="Stock.Tests.BusinessTests.A22_SnapshotsIdentityAndDisable" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\debug\net10.0\stock.tests.dll" id="4d82524a-c9dc-6c38-81ed-013556db5af9">
+      <Execution id="8cafbb9f-a576-4058-ab82-b7952ee2330c" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Debug\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.BusinessTests" name="A22_SnapshotsIdentityAndDisable" />
+    </UnitTest>
+    <UnitTest name="Stock.Tests.BusinessTests.A09_InvalidIntegerQuantity(q: 2147483648)" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\debug\net10.0\stock.tests.dll" id="cc232372-67e0-b7d4-dbdc-7c43ec6a10c2">
+      <Execution id="cbc19b7b-e1fb-4774-a2ff-b7d8676b0b66" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Debug\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.BusinessTests" name="A09_InvalidIntegerQuantity" />
+    </UnitTest>
+    <UnitTest name="Stock.Tests.InvoiceTests.A09_IntegerTextIsStrict(text: &quot;-1&quot;, valid: False)" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\debug\net10.0\stock.tests.dll" id="2487d500-5cf2-70bd-1d72-5bd503f298c1">
+      <Execution id="e32ec75e-c19d-46c4-a51e-fa9f52396346" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Debug\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.InvoiceTests" name="A09_IntegerTextIsStrict" />
+    </UnitTest>
+    <UnitTest name="Stock.Tests.BusinessTests.A11_PreviewAndDuplicateSubmit" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\debug\net10.0\stock.tests.dll" id="d5061064-787f-267d-89e6-df406ce08c4f">
+      <Execution id="afcb87c1-c904-43c3-95a1-c5550e7ccc49" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Debug\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.BusinessTests" name="A11_PreviewAndDuplicateSubmit" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="32cb5dc6-d7e3-7c27-fc50-57ff4f4eec2b" executionId="2871be0e-31d1-4c6b-9f78-36ea7e7a1c5d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="35bba23c-a161-4250-7748-0fa1e7861252" executionId="7049f4e7-1f26-4e26-a51d-60333b2e5fd1" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="d5061064-787f-267d-89e6-df406ce08c4f" executionId="afcb87c1-c904-43c3-95a1-c5550e7ccc49" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="dd7f3cea-8ae3-df4c-9384-8ebbc9c7421c" executionId="09e30635-1f1d-4aac-b843-2152de1a5aec" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="786bd73a-2562-c480-a093-fdc10b821955" executionId="56f7e10e-46f2-4403-aa7b-10cac2421560" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="92dae8dd-2171-5f49-b09a-1248ebb0b65a" executionId="2388f46e-3ae0-43ac-8d4f-209859c88587" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="e109f4f6-0a3c-8ad1-ca90-67f59e1116f0" executionId="5594d9eb-d3cf-4436-aaf5-3796ed56eac0" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="aac5efcc-487e-ef14-b7ed-21a8d12d6c9d" executionId="ff1989e7-0cb9-4b94-a70e-e219886175cf" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="0b4dfdd6-b30a-c1ef-a4df-9b4627f13744" executionId="4e3c312f-3856-4ea5-a7c8-2a7015148c9a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="2161b961-8675-b757-6592-a0a7e87d346d" executionId="0730e0af-80dc-4173-be8f-bf93ebb9bd8c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="0d5bc3fe-16d3-f78d-06ea-ed5004b1494b" executionId="2bc1e5c9-e2fa-4034-b83c-bc05b76fce88" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="122f1111-2a16-c086-7d2b-e0ee1cb6a4d6" executionId="cf659549-b0fb-490b-bf89-79bfd0c2088c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="0bf44514-6320-ce0e-1bcd-58f13bd4a3c5" executionId="83ebadab-3b06-4dc8-89c5-3ec1282997b2" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ab20d40b-d764-e114-9f11-04fe3a22611d" executionId="ef7b5a63-f798-4d2a-8f92-668f62468191" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b52f8691-1a3b-5b1f-35af-a3cf2da7d357" executionId="7fbb1d4b-8875-411c-8147-b94af350e734" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1c25a96d-8a12-6c80-b605-cffe77c5469a" executionId="97e61de3-144a-45f3-a68c-32e89f322d1d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="841173cf-a8fb-d90f-c483-daf0aa5ce476" executionId="5d0e5822-481a-4a8b-aad2-8495e621f8e5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="2487d500-5cf2-70bd-1d72-5bd503f298c1" executionId="e32ec75e-c19d-46c4-a51e-fa9f52396346" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="69767b00-e7c2-1aa6-090e-1c98023b9845" executionId="97188a2f-d6a3-4b58-ba61-bec19113a240" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="db15a7ef-a0cc-3be2-c10a-f07145d3079c" executionId="121c96ed-cfa5-4bda-93d7-09062a3e9d05" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9c9d6a7a-44d0-85ec-e1c3-a977c4ba1c74" executionId="396801fe-ae0e-42ac-a626-65b8c6140c20" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="d1505a9e-e3d9-e588-cf8a-4b376dce9658" executionId="f6955297-37b7-4a7f-b660-409c149145b2" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="94fce09c-c284-7278-b8c6-3bfd9fcd8672" executionId="bf9045cb-fe2c-440e-afa3-c3d2cc4529f7" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="2d9cf030-afbf-d30a-a640-22e37aefbfe5" executionId="54ed743a-f681-4c64-9bcc-1157713a8eb6" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="eccf3bd2-94f2-bfdc-8498-709e7be812b8" executionId="a7d1d8ef-24dd-4809-952c-d5ad8a73b3c4" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1f9deb10-501f-dd86-c4fd-d69738ed7112" executionId="40963ce5-5967-4bda-b759-a7577d539718" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="09a4d4d9-a84e-6b0b-22c9-662a9e1b9845" executionId="4bc9606b-e846-4209-852a-bed2a66da319" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="88140edc-fb6d-630d-d960-ed07a9c4b368" executionId="4fafde83-f1f8-4170-9c61-96a84c534a28" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="4d82524a-c9dc-6c38-81ed-013556db5af9" executionId="8cafbb9f-a576-4058-ab82-b7952ee2330c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="2213e686-4b13-fa0a-8ee8-7cf5826ea16a" executionId="8c50fc23-56d9-40c1-b9a6-593a6d7630ed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="cc232372-67e0-b7d4-dbdc-7c43ec6a10c2" executionId="cbc19b7b-e1fb-4774-a2ff-b7d8676b0b66" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="cf95c704-07b4-f186-b04b-ea9171756793" executionId="7a7a2c53-0398-4310-8a71-69e765943ed5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="39578307-bd13-cd8b-f244-9ab8faa9d5c2" executionId="d176716b-9489-4b38-b5d4-2c5394cfd1d9" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="42aa36bb-33ce-e14c-8e2c-c54e5501e603" executionId="dcbdc31c-0e0f-48fa-b29b-70bf48f530a8" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="4a30438a-c339-85f8-8a65-962f4c27235b" executionId="7507b3c4-1d05-43c6-811f-9ef59efaa1a2" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="991a1380-4364-2293-f241-c667eac11889" executionId="b58aacb2-6ed9-4622-bb89-75a13b1c4bcc" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ae2d7a90-da61-1f21-f6c6-ef8111228f05" executionId="0af91811-270b-41a0-b7ed-faf25724df67" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="列表中未列出的结果" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="所有已加载的结果" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="37" executed="37" passed="37" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.0+00ab0a9ec4 (64-bit .NET 10.0.11)&#xD;
+[xUnit.net 00:00:00.60]   Discovering: Stock.Tests&#xD;
+[xUnit.net 00:00:00.64]   Discovered:  Stock.Tests&#xD;
+[xUnit.net 00:00:00.66]   Starting:    Stock.Tests&#xD;
+[xUnit.net 00:00:06.88]   Finished:    Stock.Tests&#xD;
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>

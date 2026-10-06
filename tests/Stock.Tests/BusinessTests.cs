@@ -42,12 +42,12 @@ public sealed class BusinessTests : IDisposable
         var buy=service.Commit(DocumentKind.Purchase,"厂家",[new(a,5),new(b,5)],Key()); Sell(b,5);
         Assert.Throws<BusinessException>(()=>service.Void(buy,"错误",Key())); Assert.Equal(5,P(a).Warehouse); Assert.Equal(RecordStatus.Valid,service.GetDocument(buy).Status); service.ValidateIntegrity();
     }
-    [Theory] [InlineData(-1)] [InlineData(0)] [InlineData(2147483648)] public void A09_InvalidIntegerQuantity(long q)
+    [Theory] [InlineData(-1)] [InlineData(2147483648)] public void A09_InvalidIntegerQuantity(long q)
     { var id=New(); Assert.Throws<BusinessException>(()=>Buy(id,q)); Assert.Equal(13,P(id).Total); }
     [Fact] public void A09_OverflowAndZeroOpening()
     { var id=New(0,0); Assert.Equal(0,P(id).Total); Buy(id,int.MaxValue); Assert.Throws<BusinessException>(()=>Buy(id,1)); Assert.Throws<BusinessException>(()=>New(int.MaxValue,1,"溢出")); }
     [Fact] public void A10_DuplicateLinesCannotBypassStock()
-    { var id=New(10,0); Assert.Throws<BusinessException>(()=>service.Commit(DocumentKind.Sale,"批发",[new(id,6),new(id,6)],Key())); var d=service.Commit(DocumentKind.Purchase,"厂家",[new(id,3),new(id,4)],Key()); Assert.Single(service.GetDocument(d).Lines); Assert.Equal(17,P(id).Warehouse); }
+    { var id=New(10,0); Assert.Throws<BusinessException>(()=>service.Commit(DocumentKind.Sale,"批发",[new(id,6),new(id,6)],Key())); var d=service.Commit(DocumentKind.Purchase,"厂家",[new(id,3),new(id,4)],Key()); Assert.Equal(2,service.GetDocument(d).Lines.Count); Assert.Equal(17,P(id).Warehouse); }
     [Fact] public void A11_PreviewAndDuplicateSubmit()
     { var id=New(); service.Preview(DocumentKind.Purchase,[new(id,5)]); Assert.Equal(10,P(id).Warehouse); var key=Key(); var doc=Buy(id,5,key); Assert.Equal(doc,Buy(id,5,key)); Assert.Equal(15,P(id).Warehouse); }
     [Fact] public void A12_FailureRollsBackAllWrites()
@@ -69,7 +69,7 @@ public sealed class BusinessTests : IDisposable
     {
         Assert.Equal(new DateOnly(2024,2,29),Rules.Dates(DatePreset.Last3Months,new DateOnly(2024,5,31)).Start);
         Assert.Equal((new DateOnly(2025,12,1),new DateOnly(2025,12,31)),Rules.Dates(DatePreset.PreviousMonth,new DateOnly(2026,1,1)));
-        clock.Today=new(2024,2,29); Assert.Equal(new DateOnly(2019,2,28),service.Maintain().Cutoff);
+        clock.Today=new(2024,2,29); Assert.Equal(new DateOnly(2021,2,28),service.Maintain().Cutoff);
     }
     [Fact] public void A17To18_ExcelExportsAllAndExcludesVoided()
     {
@@ -81,11 +81,11 @@ public sealed class BusinessTests : IDisposable
     }
     [Fact] public void A19_CarryForwardPreservesBalanceAndDeletesOnlyExpired()
     {
-        clock.Today=new(2021,10,4); var id=New(10,3); var photo=Path.Combine(root,"source.jpg"); File.WriteAllBytes(photo,[1,2,3]);
+        clock.Today=new(2023,10,4); var id=New(10,3); var photo=Path.Combine(root,"source.jpg"); File.WriteAllBytes(photo,[1,2,3]);
         service.Commit(DocumentKind.Purchase,"厂家",[new(id,5)],Key(),[photo]);
-        clock.Today=new(2021,10,5); Sell(id,2); clock.Today=new(2026,10,5);
-        var result=service.Maintain(); Assert.Equal(new DateOnly(2021,10,5),result.Cutoff); Assert.Equal(2,result.DeletedDocuments); Assert.Equal(1,result.DeletedPhotos);
-        Assert.Equal((13L,3L),(P(id).Warehouse,P(id).Store)); Assert.True(File.Exists(photo)); Assert.Single(service.Query(new(new(2021,10,5),clock.Today)));
+        clock.Today=new(2023,10,5); Sell(id,2); clock.Today=new(2026,10,5);
+        var result=service.Maintain(); Assert.Equal(new DateOnly(2023,10,5),result.Cutoff); Assert.Equal(2,result.DeletedDocuments); Assert.Equal(1,result.DeletedPhotos);
+        Assert.Equal((13L,3L),(P(id).Warehouse,P(id).Store)); Assert.True(File.Exists(photo)); Assert.Single(service.Query(new(new(2023,10,5),clock.Today)));
         Assert.Equal(0,service.Maintain().DeletedDocuments); service.ValidateIntegrity();
     }
     [Fact] public void A20_OldOriginalAndRetainedReversal()
@@ -112,7 +112,7 @@ public sealed class BusinessTests : IDisposable
     }
     [Fact] public void A22_SnapshotsIdentityAndDisable()
     {
-        var id=New(); var doc=Buy(id,1); service.UpdateProduct(id,"新螺丝","M8",false);
+        var id=New(); var doc=Buy(id,1); Assert.Throws<BusinessException>(()=>service.UpdateProduct(id,"新螺丝","M8",false));service.CompleteProduct(id,ProductType.Accessory,"新螺丝","M8","","",false);
         Assert.Equal("螺丝",service.GetDocument(doc).Lines.Single().Name); Assert.Empty(service.Products()); Assert.Throws<BusinessException>(()=>Buy(id,1));
         Assert.Throws<BusinessException>(()=>service.CreateProduct(" 新螺丝 ","Ｍ８","件",0,0,Key()));
     }

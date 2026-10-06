@@ -1,8 +1,8 @@
-$ErrorActionPreference='Stop'
+﻿$ErrorActionPreference='Stop'
 $projectRoot=[IO.Path]::GetFullPath((Split-Path $PSScriptRoot -Parent))
 $target=[IO.Path]::GetFullPath((Join-Path $projectRoot 'artifacts/installer-test/中文 安装目录'))
 if(-not $target.StartsWith($projectRoot+[IO.Path]::DirectorySeparatorChar,[StringComparison]::OrdinalIgnoreCase)){throw 'Unsafe installation test target'}
-$installer=Join-Path $projectRoot 'dist/LocalStockManager-1.0.0-win-x64-Setup.exe'
+$installer=Join-Path $projectRoot 'dist/LocalStockManager-1.1.0-win-x64-Setup.exe'
 $registry='HKCU:\Software\LocalStockManager'
 if(Test-Path -LiteralPath $registry){throw 'A real installation is registered. Test aborted to preserve it.'}
 if(Test-Path -LiteralPath $target){throw 'Test directory already exists. Use a fresh verified test target.'}

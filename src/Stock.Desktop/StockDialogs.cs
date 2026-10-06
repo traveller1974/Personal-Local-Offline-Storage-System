@@ -7,24 +7,40 @@ namespace Stock.Desktop;
 
 public static class StockDialogs
 {
-    public static Product? Product(Window owner,StockService service,Product? original=null,bool zeroOnly=false,string name="",string spec="")
+    public static Product? Product(Window owner,StockService service,Product? original=null,bool zeroOnly=false,string name="",string spec="",ProductType type=ProductType.Accessory,string color="",string code="")
     {
-        var w=Ui.Dialog(owner,original is null?"新增货品":"编辑货品",620,720);Product? saved=null;var dock=new DockPanel{Margin=new(26)};
-        var p=new StackPanel();var nameBox=new TextBox{Text=original?.Name??name,MaxLength=120};var specBox=new TextBox{Text=original?.Spec??spec,MaxLength=120};var unit=new TextBox{Text=original?.Unit??"件",IsReadOnly=original is not null,MaxLength=20};
-        Ui.Field(p,"货品名称（必填）",nameBox);Ui.Field(p,"规格 / 型号",specBox);Ui.Field(p,"单位（建档后固定）",unit);
+        var w=Ui.Dialog(owner,original is null?"新增完整身份货品":"货品资料与状态",660,850);Product? saved=null;var dock=new DockPanel{Margin=new(26)};
+        var p=new StackPanel();var nameBox=new TextBox{Text=original?.Name??name,MaxLength=120};var specBox=new TextBox{Text=original?.Spec??spec,MaxLength=500};var unit=new TextBox{Text=original?.Unit??"件",IsReadOnly=true,MaxLength=20};
+        var choices=new[]{ProductType.Unknown,ProductType.Vehicle,ProductType.Battery,ProductType.Charger,ProductType.Accessory}.Select(t=>new Choice<ProductType>(Rules.TypeName(t),t)).ToList();
+        var typeBox=new ComboBox{ItemsSource=choices,SelectedItem=choices.Single(t=>t.Value==(original?.Type??type))};
+        var colorBox=new TextBox{Text=original?.Color??color,MaxLength=120};var codeBox=new TextBox{Text=original?.MaterialCode??code,MaxLength=120};
+        typeBox.SelectionChanged+=(_,_)=>unit.Text=typeBox.SelectedItem is Choice<ProductType> selected&&selected.Value!=ProductType.Unknown?Rules.Unit(selected.Value):original?.Unit??"待确认";
+        unit.Text=(original?.Type??type)==ProductType.Unknown?original?.Unit??"待确认":Rules.Unit(original?.Type??type);
+        Ui.Field(p,"货物类型",typeBox);Ui.Field(p,"货品名称（必填）",nameBox);Ui.Field(p,"完整规格 / 型号",specBox);Ui.Field(p,"颜色（电池、充电器留空）",colorBox);Ui.Field(p,"物料编码（无编码须人工确认留空）",codeBox);Ui.Field(p,"系统单位",unit);
+        var correction=new CheckBox{Content="明确补全 / 纠正此货品身份，不拆分或合并现有库存；历史快照不改写",IsChecked=false,Margin=new(0,12,0,12)};
+        if(original is not null)p.Children.Add(correction);
         var warehouse=new QuantityBox{Minimum=0,Value="0"};var store=new QuantityBox{Minimum=0,Value="0"};var active=new CheckBox{Content="启用此货品",IsChecked=original?.Active??true};
         if(original is null&&!zeroOnly) { Ui.Field(p,"仓库期初数量",warehouse);Ui.Field(p,"店面期初数量",store); }
         if(original is not null)p.Children.Add(active);
         p.Children.Add(Ui.Text(original is not null?"历史单据保留原名称和规格。停用后无法进出货，库存与历史仍保留。":zeroOnly?"新货品初始库存为0；照片中的数量将在最终确认进货后入库。":"期初库存单独记账，不计入厂家进货。"));
         var key=Guid.NewGuid().ToString("N");var actions=Ui.Row(Ui.Button("取消",()=>w.DialogResult=false),Ui.Button(original is null?"预览并确认":"保存货品",()=>
         {
-            if(original is not null) { service.UpdateProduct(original.Id,nameBox.Text,specBox.Text,active.IsChecked==true);saved=service.Products(includeInactive:true).Single(x=>x.Id==original.Id);w.DialogResult=true;return; }
+            var selectedType=((Choice<ProductType>)typeBox.SelectedItem).Value;
+            if(original is not null)
+            {
+                var changed=original.Name!=nameBox.Text||original.Spec!=specBox.Text||original.Type!=selectedType||(original.Color??"")!=colorBox.Text||(original.MaterialCode??"")!=codeBox.Text;
+                if(changed&&correction.IsChecked!=true)throw new BusinessException("修改身份须明确勾选资料补全 / 纠错；不会自动拆分或合并库存。");
+                if(correction.IsChecked==true)service.CompleteProduct(original.Id,selectedType,nameBox.Text,specBox.Text,colorBox.Text,codeBox.Text,active.IsChecked==true);
+                else service.UpdateProduct(original.Id,original.Name,original.Spec,active.IsChecked==true);
+                saved=service.GetProduct(original.Id);w.DialogResult=true;return;
+            }
             var wh=zeroOnly?0:warehouse.Number;var st=zeroOnly?0:store.Number;Rules.Balance(wh,st);
             if(string.IsNullOrWhiteSpace(nameBox.Text)||string.IsNullOrWhiteSpace(unit.Text))throw new BusinessException("请填写货品名称和单位。");
             var proposed=new Product(0,nameBox.Text,specBox.Text,unit.Text,true,0,0);
             var productName=nameBox.Text;var productSpec=specBox.Text;var productUnit=unit.Text;
-            if(Ui.Confirm(w,"确认货品与期初库存",$"名称：{productName}；规格：{productSpec}；单位：{productUnit}\n仓库期初：{wh}；店面期初：{st}；合计：{wh+st}",[new(proposed,wh,st)],()=>Task.Run(()=>service.CreateProduct(productName,productSpec,productUnit,wh,st,key).ToString()),out var id))
-            {saved=service.Products(includeInactive:true).Single(x=>x.Id==long.Parse(id!));w.DialogResult=true;}
+            var productColor=colorBox.Text;var productCode=codeBox.Text;
+            if(Ui.Confirm(w,"确认货品与期初库存",$"类型：{Rules.TypeName(selectedType)}；名称：{productName}；规格：{productSpec}；颜色：{productColor}；编码：{productCode}；单位：{productUnit}\n仓库期初：{wh}；店面期初：{st}；合计：{wh+st}",[new(proposed,wh,st)],()=>Task.Run(()=>service.CreateProduct(selectedType,productName,productSpec,productColor,productCode,wh,st,key).ToString()),out var id))
+            {saved=service.GetProduct(long.Parse(id!));w.DialogResult=true;}
         },true));
         actions.HorizontalAlignment=HorizontalAlignment.Right;DockPanel.SetDock(actions,Dock.Bottom);dock.Children.Add(actions);dock.Children.Add(new ScrollViewer{Content=p,VerticalScrollBarVisibility=ScrollBarVisibility.Auto});w.Content=dock;w.ShowDialog();return saved;
     }
@@ -60,6 +76,6 @@ public static class StockDialogs
             var key=Guid.NewGuid().ToString("N");panel.Children.Add(Ui.Row(Ui.Button("取消",()=>reasonWindow.Close()),Ui.Button("预览作废",()=>
             { if(string.IsNullOrWhiteSpace(reason.Text))throw new BusinessException("请填写作废原因。");var reasonText=reason.Text;if(Ui.Confirm(reasonWindow,"确认作废",$"原单：{doc.Number}\n原因：{reasonText}",impacts,()=>Task.Run(()=>service.Void(id,reasonText,key)),out var reversal)){changed=reversal;reasonWindow.DialogResult=true;w.Close();} },true)));reasonWindow.Content=panel;reasonWindow.ShowDialog();
         }));
-        foot.Children.Add(actions);DockPanel.SetDock(foot,Dock.Bottom);dock.Children.Add(foot);dock.Children.Add(Ui.Table(doc.Lines,("货品名称","Name",0),("规格","Spec",150),("单位","Unit",70),("数量","Quantity",100),("仓库变动","WarehouseDelta",120),("店面变动","StoreDelta",120)));w.Content=dock;w.ShowDialog();return changed;
+        foot.Children.Add(actions);DockPanel.SetDock(foot,Dock.Bottom);dock.Children.Add(foot);dock.Children.Add(Ui.Table(doc.Lines,("行序","LineOrder",55),("照片序号","PhotoOrder",70),("原序号","OriginalOrder",65),("货品名称","Name",160),("规格","Spec",220),("颜色","ColorText",100),("实发数量","Quantity",85),("单位","Unit",55),("标识","Marker",65),("类型","TypeText",75),("物料编码","CodeText",110),("原单位","RawUnit",65),("仓库变动","WarehouseDelta",100),("店面变动","StoreDelta",100),("核对说明","ReviewNote",200)));w.Content=dock;w.ShowDialog();return changed;
     }
 }

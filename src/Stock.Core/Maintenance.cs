@@ -36,11 +36,13 @@ public sealed partial class StockService
     {
         lock(gate)
         {
-            ValidateIntegrity(); var cutoff=clock.Today.AddYears(-5);
+            ValidateIntegrity(); var cutoff=clock.Today.AddYears(-3);
             using(var cn=Connect())
             {
                 var previous=DateOnly.Parse((string)Scalar(cn,null,"SELECT Value FROM Metadata WHERE Key='Cutoff'")!);
                 if(cutoff<previous) cutoff=previous; // Clock rollback must not reopen an already deleted period.
+                if((string?)Scalar(cn,null,"SELECT Value FROM Metadata WHERE Key='RetentionYears'")!="3")
+                    ProtectionBackup(cn,"before-three-year-retention");
                 using var tx=cn.BeginTransaction();
                 var sums=new List<(long ProductId,long W,long S)>();
                 using(var cmd=Command(cn,tx,"SELECT l.ProductId,SUM(l.WarehouseDelta),SUM(l.StoreDelta) FROM DocumentLine l JOIN Document d ON d.Id=l.DocumentId WHERE d.BusinessDate<$c GROUP BY l.ProductId",("$c",Rules.DateText(cutoff))))
@@ -56,6 +58,10 @@ public sealed partial class StockService
                     OR b.Store<>c.Store+COALESCE((SELECT SUM(StoreDelta) FROM DocumentLine WHERE ProductId=b.ProductId),0)
                     """));
                 if(mismatch!=0) throw new BusinessException("结转校验失败，清理已回滚。");
+                Run(cn,tx,"UPDATE Metadata SET Value='3' WHERE Key='RetentionYears'");
+                Run(cn,tx,"DELETE FROM CarryForward WHERE ProductId IN (SELECT p.Id FROM Product p JOIN StockBalance b ON b.ProductId=p.Id WHERE b.Warehouse=0 AND b.Store=0 AND p.LastUsed<$c AND NOT EXISTS(SELECT 1 FROM DocumentLine l WHERE l.ProductId=p.Id))",("$c",Rules.DateText(cutoff)));
+                Run(cn,tx,"DELETE FROM StockBalance WHERE ProductId NOT IN (SELECT ProductId FROM CarryForward)");
+                Run(cn,tx,"DELETE FROM Product WHERE Id NOT IN (SELECT ProductId FROM StockBalance)");
                 tx.Commit();
                 var count=CleanupPhotos(cn);
                 return new(cutoff,deleted,count);
@@ -103,7 +109,7 @@ public sealed partial class StockService
                     }
                 }
                 var files=Directory.GetFiles(temp,"*",SearchOption.AllDirectories).ToDictionary(f=>Path.GetRelativePath(temp,f).Replace('\\','/'),Hash);
-                File.WriteAllText(Path.Combine(temp,"manifest.json"),JsonSerializer.Serialize(new BackupManifest(1,files)));
+                File.WriteAllText(Path.Combine(temp,"manifest.json"),JsonSerializer.Serialize(new BackupManifest(2,files)));
                 ZipFile.CreateFromDirectory(temp,pending,CompressionLevel.Optimal,false); File.Move(pending,destination,true);
             }
             finally { if(File.Exists(pending))File.Delete(pending); Directory.Delete(temp,true); }
@@ -130,11 +136,11 @@ public sealed partial class StockService
                 }
                 if(!File.Exists(Path.Combine(staging,"stock.db"))||!File.Exists(Path.Combine(staging,"manifest.json")))throw new BusinessException("备份缺少数据库或清单。");
                 var manifest=JsonSerializer.Deserialize<BackupManifest>(File.ReadAllText(Path.Combine(staging,"manifest.json"))) ?? throw new BusinessException("备份清单无效。");
-                if(manifest.SchemaVersion!=1)throw new BusinessException("备份版本不兼容。");
+                if(manifest.SchemaVersion is not (1 or 2))throw new BusinessException("备份版本不兼容。");
                 var actual=Directory.GetFiles(staging,"*",SearchOption.AllDirectories).Where(f=>f!=Path.Combine(staging,"manifest.json")).ToDictionary(f=>Path.GetRelativePath(staging,f).Replace('\\','/'),Hash);
                 if(actual.Count!=manifest.Files.Count||actual.Any(k=>!manifest.Files.TryGetValue(k.Key,out var hash)||hash!=k.Value)) throw new BusinessException("备份校验失败，文件损坏或被修改。");
                 using(var source=new SqliteConnection(new SqliteConnectionStringBuilder{DataSource=Path.Combine(staging,"stock.db"),Mode=SqliteOpenMode.ReadOnly,Pooling=false}.ToString()))
-                {source.Open();if(Convert.ToInt32(Scalar(source,null,"PRAGMA user_version"))!=1)throw new BusinessException("备份数据库结构版本不兼容。");}
+                {source.Open();if(Convert.ToInt32(Scalar(source,null,"PRAGMA user_version")) is not (1 or 2))throw new BusinessException("备份数据库结构版本不兼容。");}
                 var candidate=new StockService(staging,clock); candidate.ValidateIntegrity();
                 using(var cn=candidate.Connect()) using(var cmd=Command(cn,null,"SELECT Path FROM Attachment")) using(var r=cmd.ExecuteReader())
                     while(r.Read()) if(!File.Exists(candidate.ManagedPath(r.GetString(0))))throw new BusinessException("备份缺少货单照片。");

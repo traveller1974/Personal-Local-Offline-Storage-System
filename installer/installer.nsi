@@ -4,18 +4,24 @@ Unicode true
 !include "LogicLib.nsh"
 !include "FileFunc.nsh"
 !ifndef APP_VERSION
- !define APP_VERSION "1.0.0"
+ !define APP_VERSION "1.1.0"
+!endif
+!ifndef APP_ID
+ !define APP_ID "LocalStockManager"
+!endif
+!ifndef SHORTCUT_LABEL
+ !define SHORTCUT_LABEL "本地库存管理"
 !endif
 Name "本地库存管理"
 OutFile "${OUTPUT_FILE}"
 InstallDir "$LOCALAPPDATA\Programs\LocalStockManager"
-InstallDirRegKey HKCU "Software\LocalStockManager" "InstallPath"
+InstallDirRegKey HKCU "Software\${APP_ID}" "InstallPath"
 RequestExecutionLevel user
 SetCompressor /SOLID lzma
 SetCompressorDictSize 32
 ShowInstDetails show
 ShowUninstDetails show
-VIProductVersion "1.0.0.0"
+VIProductVersion "${APP_VERSION}.0"
 VIAddVersionKey /LANG=2052 "ProductName" "本地库存管理"
 VIAddVersionKey /LANG=2052 "FileDescription" "本地库存管理离线安装程序"
 VIAddVersionKey /LANG=2052 "FileVersion" "${APP_VERSION}"
@@ -41,7 +47,7 @@ Function .onInit
   MessageBox MB_ICONSTOP "请在Windows 11电脑上安装。"
   Abort
  ${EndIf}
- System::Call 'kernel32::OpenMutexW(i 0x00100000,i 0,w "Local\LocalStockManager") p.r0'
+ System::Call 'kernel32::OpenMutexW(i 0x00100000,i 0,w "Local\${APP_ID}") p.r0'
  ${If} $0 != 0
   System::Call 'kernel32::CloseHandle(p r0)'
   MessageBox MB_ICONSTOP "请先关闭本地库存管理，再安装或升级。"
@@ -63,23 +69,23 @@ Section "本地库存管理（必需）" Main
  FileWrite $0 "LocalStockManager-1b2162c4-34c7-4c1c-b124-550f11084150$\r$\n"
  FileClose $0
  WriteUninstaller "$INSTDIR\Uninstall.exe"
- CreateShortcut "$SMPROGRAMS\本地库存管理.lnk" "$INSTDIR\LocalStockManager.exe"
- WriteRegStr HKCU "Software\LocalStockManager" "InstallPath" "$INSTDIR"
- WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\LocalStockManager" "DisplayName" "本地库存管理"
- WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\LocalStockManager" "DisplayVersion" "${APP_VERSION}"
- WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\LocalStockManager" "InstallLocation" "$INSTDIR"
- WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\LocalStockManager" "UninstallString" '$\"$INSTDIR\Uninstall.exe$\"'
- WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\LocalStockManager" "NoModify" 1
- WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\LocalStockManager" "NoRepair" 1
+ CreateShortcut "$SMPROGRAMS\${SHORTCUT_LABEL}.lnk" "$INSTDIR\LocalStockManager.exe"
+ WriteRegStr HKCU "Software\${APP_ID}" "InstallPath" "$INSTDIR"
+ WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_ID}" "DisplayName" "本地库存管理"
+ WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_ID}" "DisplayVersion" "${APP_VERSION}"
+ WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_ID}" "InstallLocation" "$INSTDIR"
+ WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_ID}" "UninstallString" '$\"$INSTDIR\Uninstall.exe$\"'
+ WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_ID}" "NoModify" 1
+ WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_ID}" "NoRepair" 1
 SectionEnd
 Section /o "创建桌面快捷方式" Desktop
- CreateShortcut "$DESKTOP\本地库存管理.lnk" "$INSTDIR\LocalStockManager.exe"
+ CreateShortcut "$DESKTOP\${SHORTCUT_LABEL}.lnk" "$INSTDIR\LocalStockManager.exe"
 SectionEnd
 
 Function un.onInit
  SetShellVarContext current
  SetRegView 64
- System::Call 'kernel32::OpenMutexW(i 0x00100000,i 0,w "Local\LocalStockManager") p.r0'
+ System::Call 'kernel32::OpenMutexW(i 0x00100000,i 0,w "Local\${APP_ID}") p.r0'
  ${If} $0 != 0
   System::Call 'kernel32::CloseHandle(p r0)'
   MessageBox MB_ICONSTOP "请先关闭本地库存管理，再卸载。"
@@ -105,8 +111,8 @@ Section "Uninstall"
  ; This directory is owned by the installer and verified by un.onInit.
  ; Data lives separately in LOCALAPPDATA\LocalStockManager\Data and is retained.
  RMDir /r "$INSTDIR"
- Delete "$SMPROGRAMS\本地库存管理.lnk"
- Delete "$DESKTOP\本地库存管理.lnk"
- DeleteRegKey HKCU "Software\LocalStockManager"
- DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\LocalStockManager"
+ Delete "$SMPROGRAMS\${SHORTCUT_LABEL}.lnk"
+ Delete "$DESKTOP\${SHORTCUT_LABEL}.lnk"
+ DeleteRegKey HKCU "Software\${APP_ID}"
+ DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_ID}"
 SectionEnd

@@ -1,0 +1,111 @@
+"""Generate the release report from recorded evidence; do not infer cloud acceptance."""
+from datetime import datetime
+import hashlib
+import json
+from pathlib import Path
+import shutil
+import xml.etree.ElementTree as ET
+
+ROOT = Path(__file__).resolve().parents[1]
+ARCHIVED = ROOT / "docs/验证证据/v1.1"
+EVIDENCE_NAMES = {
+    "artifacts/desktop-smoke-v1.1/desktop-results.json": "desktop-results.json",
+    "artifacts/v1.1/performance/results.json": "performance.json",
+    "artifacts/v1.1/ui-performance/results.json": "ui-performance.json",
+    "artifacts/v1.1/install-upgrade-results.json": "install-upgrade-results.json",
+}
+
+
+def read(relative):
+    path = ROOT / relative
+    if not path.exists():
+        archived_name = EVIDENCE_NAMES.get(str(relative))
+        if archived_name is None and Path(relative).name == "desktop-results.json":
+            archived_name = "installed-desktop-results.json"
+        if archived_name is None:
+            raise FileNotFoundError(path)
+        path = ARCHIVED / archived_name
+    return json.loads(path.read_text(encoding="utf-8-sig"))
+
+
+def main():
+    installer = ROOT / "dist/LocalStockManager-1.1.0-win-x64-Setup.exe"
+    core_evidence = ROOT / "artifacts/tests/core.trx"
+    if not core_evidence.exists():
+        core_evidence = ARCHIVED / "core.trx"
+    counters = ET.parse(core_evidence).find(
+        ".//{http://microsoft.com/schemas/VisualStudio/TeamTest/2010}Counters").attrib
+    desktop = read("artifacts/desktop-smoke-v1.1/desktop-results.json")
+    performance = read("artifacts/v1.1/performance/results.json")
+    ui = read("artifacts/v1.1/ui-performance/results.json")
+    upgrade = read("artifacts/v1.1/install-upgrade-results.json")
+    installed = read(Path(upgrade["testDirectory"]) / "v1.1-smoke/desktop-results.json")
+    assert counters["failed"] == "0" and all(e["success"] for e in (desktop, performance, ui, upgrade, installed))
+    digest = hashlib.sha256(installer.read_bytes()).hexdigest()
+    baseline = read("docs/样单人工基准.json")
+    pending = sum(value is None for sample in baseline["samples"] for row in sample["rows"] for value in row.values())
+    report = f"""# 本地库存管理 1.1.0 验收报告
+
+生成时间：{datetime.now().astimezone().isoformat(timespec='seconds')}。目标平台：Windows 11 x64。
+
+## 当前结论
+
+独立开发、模拟云端协议、库存迁移、精细身份、逐行记账、三年维护、SQL 筛选汇总、流式导出、WPF 集成和隔离安装升级已通过下列自动化验证。
+
+**真实百炼联网样单验收待验证。** 未配置用户密钥，没有上传两张用户货单，没有真实请求耗时、Token、准确率或费用数据。不能把模拟接口通过或本机备用 OCR 样本通过称为这两张照片的联网验收通过。
+
+## 功能与回归证据
+
+| 验证项目 | 结果 | 证据与范围 |
+|---|---|---|
+| 开发前 v1 回归 | 37项通过 | `docs/验证证据/v1.1/baseline-v1.trx` |
+| 当前核心回归 | {counters['passed']}/{counters['total']}项通过 | `docs/验证证据/v1.1/core.trx`；迁移回滚、旧备份、完整身份、零实发、重复行与作废、事务回滚、三年边界、筛选、导出和模拟请求 |
+| WPF 集成 | {len(desktop['checks'])}项通过 | `docs/验证证据/v1.1/desktop-results.json`；真实控件、断网手工业务、原行保留、核对撤销、合计重检、DPAPI、备份不含密钥、透视与变换关系 |
+| 安装后的 WPF 集成 | {len(installed['checks'])}项通过 | 隔离安装目录下真实自包含程序与本机备用 OCR，含中文和空格路径 |
+| v1→v1.1 安装升级及卸载 | {len(upgrade['checks'])}项通过 | 安装及卸载前后逐文件 SHA-256 校验数据库、照片、模拟设置和保护备份；迁移后余额不变；真实安装注册信息未改动 |
+| 本机备用 OCR | 通过 | 源码与已打包工作程序各3个中文示例；3项错误协议测试。示例不是用户两张复杂货单 |
+| 云端协议 | 模拟通过 | 原生 HTTP、Base64、实发 JSON、PC两类、缺列、颜色冲突、鉴权、余额、限流、超时、取消、迟到响应、无效 JSON 与截断；无真实付费调用 |
+| 依赖与构建 | 通过 | 锁定 NuGet 恢复、自包含发布、NSIS 1.1.0 与 SHA-256；运行时 Excel 为流式 XML，ClosedXML仅在测试中校验工作簿 |
+
+## 20万行性能
+
+硬件：Intel Core i5-13500H（12核/16逻辑处理器），约15.73GiB内存。系统：{performance['os']}；.NET：{performance['runtime']}。SQLite 数据位于本机磁盘。数据：1000种货品、10000张单据、200000条货品流水，四类和不同规格颜色编码。查询先预热；组合条件覆盖类型、名称、规格和颜色多选。
+
+| 项目 | 实测 | 目标 | 结果 |
+|---|---:|---:|---|
+| 热组合筛选与第3页 | {performance['queryMs']/1000:.3f}秒 | 3秒内 | 通过 |
+| 热 SQL 汇总 | {performance['summaryMs']/1000:.3f}秒 | 3秒内 | 通过 |
+| 完整21列流水 Excel | {performance['exportMs']/1000:.3f}秒 | 120秒内 | 通过；流式核对导出200000条，非当前页 |
+| 实际 WPF 后台完整导出 | {ui['exportMs']/1000:.3f}秒 | 保持响应 | 通过；期间Dispatcher处理{ui['dispatcherTicksDuringExport']}次定时事件 |
+| WPF取消响应 | {ui['cancelResponseMs']:.1f}毫秒 | 可取消 | 通过；无最终残缺文件 |
+
+精简后验证证据归档在 `docs/验证证据/v1.1`，交付包附有相同证据；大型测试数据库、Excel 和临时安装副本已移出项目，存入本机可恢复归档。初次查询约14秒，定位到不合适的明细索引后修正，以上为修正后的结果。测试不触碰用户真实数据。
+
+## 真实照片基准与后续联网验收
+
+基准：`docs/样单人工基准.json`，直接查看照片和本机放大表格。第一张17行：成车48、电池30、充电器53、附件30；第二张4行：成车5、电池23、充电器0、附件1。
+
+已核对行序、分区类型、实发数量、原单位、标识与可辨编码。{pending}个完整字段以null标为待人工确认，不猜填、不拿模型输出补基准。联网验收须先确认这些必填资料，配置百炼Key和控制台地域地址，在软件中确认截图范围再调用，记录真实Token、耗时和修正字段；清晰名称、完整规格、颜色、编码和标识按完整字段统计目标95%，类型、数量、单位与行序须全部正确。
+
+`scripts/evaluate_samples.py`可比较本地保存的识别元数据与基准；程序不会读取Key或上传图片。主识别无虚构置信度，文字定位需另次主动调用。若未达目标，先修正处理和解析，不新增其他付费服务。
+
+## 交付物与边界
+
+- 安装包：`{installer.name}`，{installer.stat().st_size:,}字节。
+- SHA-256：`{digest}`；同名`.sha256`文件附后。
+- 使用说明、已知限制、最终升级计划、人工样单基准随交付目录保存。
+- 本机当前用户DPAPI已测；干净电脑、跨Windows用户、实体摄像头与人工长时间业务使用未验证。
+- 升级测试使用独立注册表、快捷方式和安装目录，压缩方式为测试用zlib；交付包为LZMA，同一自包含发布文件。没有部署或覆盖真实用户安装。
+- GitHub 1.1.0 发布地址：https://github.com/traveller1974/Personal-Local-Offline-Storage-System/releases/tag/local-stock-manager-v1.1.0 。
+- 安装过程只更新程序文件，现有库存、照片、设置和保护备份逐文件保持原样；首次启动的数据库迁移和三年维护遵循升级计划。
+"""
+    for path in (ROOT / "docs/验收报告.md", ROOT / "dist/验收报告.md"):
+        path.write_text(report, encoding="utf-8", newline="\n")
+    (ROOT / (str(installer.relative_to(ROOT)) + ".sha256")).write_text(f"{digest}  {installer.name}\n", encoding="ascii", newline="\n")
+    for name in ("使用说明.md", "已知限制.md", "升级计划-v1.1.md", "样单人工基准.json"):
+        shutil.copy2(ROOT / "docs" / name, ROOT / "dist" / name)
+    print(json.dumps({"coreTests": int(counters["passed"]), "desktopChecks": len(desktop['checks']), "installerChecks": len(upgrade['checks']), "sha256": digest}, ensure_ascii=False))
+
+
+if __name__ == "__main__":
+    main()

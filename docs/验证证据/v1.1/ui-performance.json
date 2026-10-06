@@ -1,0 +1,9 @@
+{
+  "success": true,
+  "rows": 200000,
+  "exportMs": 3499.2555,
+  "dispatcherTicksDuringExport": 107,
+  "cancelResponseMs": 89.3615,
+  "cancellationVerified": true,
+  "realUserDataTouched": false
+}
