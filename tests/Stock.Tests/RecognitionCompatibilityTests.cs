@@ -81,6 +81,40 @@ public sealed class RecognitionCompatibilityTests
     }
     [Theory] [InlineData("```json\r\n")] [InlineData("```JSON\n")] [InlineData("```\r\n")]
     public void CompleteCommonCodeFencesAreAccepted(string prefix)=>Assert.Equal(3,RecognitionParser.Parse(prefix+QwenTests.Sample().ToJsonString()+"\r\n```").Rows.Count);
-    [Fact] public void WrongActualColumnTypeCannotBeMadeTrue()
-    {var sample=QwenTests.Sample();sample["actualQuantityColumn"]="true";Assert.Contains("actualQuantityColumn",Assert.Throws<BusinessException>(()=>RecognitionParser.Parse(sample.ToJsonString())).Message);}
+    [Theory]
+    [InlineData("true",true)] [InlineData("false",false)]
+    [InlineData("\"true\"",true)] [InlineData("\"false\"",false)]
+    [InlineData("\"TRUE\"",true)] [InlineData("\"False\"",false)]
+    [InlineData("\"  TrUe  \"",true)] [InlineData("\"\\tFALSE\\r\\n\"",false)]
+    public void ExplicitBooleanValuesAreAcceptedWithoutChangingRows(string json,bool expected)
+    {
+        var sample=QwenTests.Sample();sample["actualQuantityColumn"]=JsonNode.Parse(json);
+        var result=RecognitionParser.Parse(sample.ToJsonString());Assert.Equal(expected,result.ActualQuantityColumn);
+        Assert.Equal(3,result.Rows.Count);Assert.Equal("2",result.Rows[0].RawQuantity);Assert.Equal("0",result.Rows[2].RawQuantity);
+        Assert.Equal(result.Rows[0].Name,result.Rows[1].Name);Assert.Equal("1",result.Rows[0].OriginalOrder);Assert.Equal("2",result.Rows[1].OriginalOrder);
+        if(json.StartsWith('"'))Assert.Contains(result.Warnings,w=>w.Contains("兼容转换"));
+        else Assert.DoesNotContain(result.Warnings,w=>w.Contains("兼容转换")||w.Contains("格式异常"));
+        if(!expected)Assert.Contains(result.Warnings,w=>w.Contains("不能加入"));
+    }
+    [Theory]
+    [InlineData("null")] [InlineData("0")] [InlineData("1")] [InlineData("-1")] [InlineData("1.0")]
+    [InlineData("\"\"")] [InlineData("\"  \"")] [InlineData("\"1\"")] [InlineData("\"0\"")]
+    [InlineData("\"是\"")] [InlineData("\"否\"")] [InlineData("\"实发数量\"")] [InlineData("\"yes\"")]
+    [InlineData("\"true\\u0000\"")] [InlineData("[]")] [InlineData("[true]")] [InlineData("{}")] [InlineData("{\"value\":true}")]
+    public void UnconfirmedActualColumnPreservesRowsAndNeverInfersTrue(string json)
+    {
+        var sample=QwenTests.Sample();sample["actualQuantityColumn"]=JsonNode.Parse(json);
+        sample["rows"]![1]!.AsObject().Remove("rawQuantity");
+        var result=RecognitionParser.Parse(sample.ToJsonString());Assert.False(result.ActualQuantityColumn);Assert.Equal(3,result.Rows.Count);
+        Assert.Equal("",result.Rows[1].RawQuantity);Assert.Equal("0",result.Rows[2].RawQuantity);Assert.Equal(5,result.SectionTotals[ProductType.Vehicle]);
+        Assert.Contains(result.Warnings,w=>w.Contains("不能加入"));
+        Assert.Contains(result.Warnings,w=>w.Contains(json=="null"?"缺失":"格式异常"));
+    }
+    [Theory] [InlineData("\"private-value-must-stay-private\"")] [InlineData("{\"private-field\":\"private-value-must-stay-private\"}")]
+    public void ActualColumnDiagnosticsDoNotExposeReturnedFieldsOrValues(string json)
+    {
+        var sample=QwenTests.Sample();sample["actualQuantityColumn"]=JsonNode.Parse(json);
+        var warnings=string.Join("",RecognitionParser.Parse(sample.ToJsonString()).Warnings);
+        Assert.DoesNotContain("private-value",warnings);Assert.DoesNotContain("private-field",warnings);
+    }
 }

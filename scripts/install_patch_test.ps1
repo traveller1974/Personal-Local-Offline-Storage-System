@@ -1,14 +1,20 @@
-﻿param([Parameter(Mandatory=$true)][string]$BaselinePublish,[string]$OutputDirectory='')
+﻿param([Parameter(Mandatory=$true)][string]$BaselinePublish,[string]$BaselineVersion='1.1.1',
+ [string]$TargetVersion='1.1.2',[string]$TargetPublish='',[string]$OutputDirectory='')
 $ErrorActionPreference='Stop'
 $projectRoot=[IO.Path]::GetFullPath((Split-Path $PSScriptRoot -Parent))
-if(-not $OutputDirectory){$OutputDirectory=Join-Path $projectRoot ('artifacts/v1.1.1/install-patch-'+[guid]::NewGuid().ToString('N'))}
+foreach($version in @($BaselineVersion,$TargetVersion)){if($version -notmatch '^\d+\.\d+\.\d+$'){throw 'Versions must use major.minor.patch'}}
+if(-not $TargetPublish){$TargetPublish=Join-Path $projectRoot ('artifacts/publish-v'+$TargetVersion)}
+if(-not $OutputDirectory){$OutputDirectory=Join-Path $projectRoot ('artifacts/v'+$TargetVersion+'/install-patch-'+[guid]::NewGuid().ToString('N'))}
 $testRoot=[IO.Path]::GetFullPath($OutputDirectory)
 if(-not $testRoot.StartsWith($projectRoot+[IO.Path]::DirectorySeparatorChar,[StringComparison]::OrdinalIgnoreCase)){throw 'Test output must stay within the project'}
 if(Test-Path -LiteralPath $testRoot){throw 'Use a fresh test directory'}
 $baseline=[IO.Path]::GetFullPath($BaselinePublish)
-if(-not(Test-Path -LiteralPath (Join-Path $baseline 'LocalStockManager.exe'))){throw 'A published v1.1.0 baseline is required'}
-$baselineVersion=[Diagnostics.FileVersionInfo]::GetVersionInfo((Join-Path $baseline 'LocalStockManager.dll')).ProductVersion
-if(-not $baselineVersion.StartsWith('1.1.0')){throw 'Baseline must be v1.1.0'}
+if(-not(Test-Path -LiteralPath (Join-Path $baseline 'LocalStockManager.exe'))){throw 'A published baseline is required'}
+$baselineProductVersion=[Diagnostics.FileVersionInfo]::GetVersionInfo((Join-Path $baseline 'LocalStockManager.dll')).ProductVersion
+if($baselineProductVersion.Split('+')[0] -ne $BaselineVersion){throw 'Baseline version does not match the requested version'}
+$targetPublishPath=[IO.Path]::GetFullPath($TargetPublish)
+if(-not(Test-Path -LiteralPath (Join-Path $targetPublishPath 'LocalStockManager.exe'))){throw 'A published target is required'}
+if([Diagnostics.FileVersionInfo]::GetVersionInfo((Join-Path $targetPublishPath 'LocalStockManager.dll')).ProductVersion.Split('+')[0] -ne $TargetVersion){throw 'Target version does not match the requested version'}
 New-Item -ItemType Directory -Force -Path $testRoot | Out-Null
 $target=[IO.Path]::GetFullPath((Join-Path $testRoot '中文 安装目录'))
 if(-not $target.StartsWith($testRoot+[IO.Path]::DirectorySeparatorChar,[StringComparison]::OrdinalIgnoreCase)){throw 'Unsafe test installation path'}
@@ -31,10 +37,10 @@ function Package([string]$publish,[string]$version,[string]$output){
  if($LASTEXITCODE -ne 0){throw 'Isolated installer packaging failed'}
 }
 function Install([string]$setup){$process=Start-Process -FilePath $setup -ArgumentList '/S',('/D='+$target) -WindowStyle Hidden -PassThru -Wait;Assert-Test ($process.ExitCode -eq 0) ('Installer succeeds: '+[IO.Path]::GetFileName($setup))}
-$oldSetup=Join-Path $testRoot 'v1.1.0-test-setup.exe'
-$newSetup=Join-Path $testRoot 'v1.1.1-test-setup.exe'
-Package $baseline '1.1.0' $oldSetup
-Package (Join-Path $projectRoot 'artifacts/publish-v1.1.1') '1.1.1' $newSetup
+$oldSetup=Join-Path $testRoot ('v'+$BaselineVersion+'-test-setup.exe')
+$newSetup=Join-Path $testRoot ('v'+$TargetVersion+'-test-setup.exe')
+Package $baseline $BaselineVersion $oldSetup
+Package $targetPublishPath $TargetVersion $newSetup
 $success=$false;$storedFileCount=0
 try {
  Install $oldSetup
@@ -53,7 +59,7 @@ try {
  Install $newSetup
  Assert-Test ((Get-FileHash -LiteralPath (Join-Path $oldData 'stock.db') -Algorithm SHA256).Hash -eq $beforeDatabase) 'Patch installation leaves the existing v2 database unchanged before application startup'
  Assert-Test ((Fingerprint $storedRoot) -eq $before) 'Patch installation preserves every stored database, photo, DPAPI setting and backup byte for byte'
- Assert-Test ([Diagnostics.FileVersionInfo]::GetVersionInfo((Join-Path $target 'LocalStockManager.dll')).ProductVersion.StartsWith('1.1.1')) 'Installed application reports version 1.1.1'
+ Assert-Test ([Diagnostics.FileVersionInfo]::GetVersionInfo((Join-Path $target 'LocalStockManager.dll')).ProductVersion.Split('+')[0] -eq $TargetVersion) ('Installed application reports version '+$TargetVersion)
  & (Join-Path $PSScriptRoot 'verify.ps1') -ApplicationPath (Join-Path $target 'LocalStockManager.exe') -OutputDirectory (Join-Path $testRoot 'patched-smoke')
  Assert-Test ((Fingerprint $storedRoot) -eq $before) 'Independent installed regression checks do not touch existing baseline data'
  Install $newSetup
@@ -69,6 +75,6 @@ try {
  $success=$true
 }
 finally {
- [ordered]@{success=$success;checks=@($checks);storedFileCount=$storedFileCount;baselineVersion='1.1.0';targetVersion='1.1.1';testDirectory=$testRoot;realInstallationPreserved=$true;cleanMachineVerified=$false} | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $projectRoot 'artifacts/v1.1.1/install-patch-results.json') -Encoding UTF8
+ [ordered]@{success=$success;checks=@($checks);storedFileCount=$storedFileCount;baselineVersion=$BaselineVersion;targetVersion=$TargetVersion;testDirectory=$testRoot;realInstallationPreserved=$success;cleanMachineVerified=$false} | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $projectRoot ('artifacts/v'+$TargetVersion+'/install-patch-results.json')) -Encoding UTF8
 }
 Write-Output "Patch installation checks passed: $($checks.Count)"

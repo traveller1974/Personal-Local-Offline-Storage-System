@@ -89,17 +89,27 @@ internal static class ImageRegression
             check(!review.CanReview&&!review.Reviewed&&review.Quantity=="-1","Invalid cloud quantity stays visible and cannot be marked reviewed");
             review.Quantity="2";review.Reviewed=true;check(review.CanReview&&review.Reviewed,"Manual correction unlocks row review without requiring optional fields");
             review.RawUnit="";check(!review.Reviewed&&!review.CanReview,"Missing source unit blocks review until corrected");review.RawUnit="PC";review.Reviewed=true;
+            foreach(var value in new[]{"false","\"false\"","1","\"是\"","[]","{}","null"})
+            {
+                window.ApplyCloudResult(RecognitionParser.Parse(json.Replace("\"actualQuantityColumn\":true","\"actualQuantityColumn\":"+value)));
+                window.Rows[0].Quantity="2";window.Rows[0].Reviewed=true;window.TotalOverride.Text="已核对合计";
+                check(window.Rows.Count==1&&window.Rows[0].Reviewed&&window.StatusText.Text.Contains("不能加入"),"Unconfirmed column preserves correctable review rows and displays its warning: "+value);
+                try{window.AddReviewedRows();check(false,"Unconfirmed actual column rejected");}
+                catch(BusinessException ex){check(ex.Message.Contains("实发列")&&draft.Lines.Count==0&&draft.Photos.Count==0,"Unconfirmed column blocks reviewed rows and total overrides: "+value);}
+            }
             window.ApplyCloudResult(RecognitionParser.Parse(json.Replace("\"actualQuantityColumn\":true,","")));window.Rows[0].Quantity="2";window.Rows[0].Reviewed=true;
-            try{window.AddReviewedRows();check(false,"Unconfirmed actual column rejected");}catch(BusinessException ex){check(ex.Message.Contains("实发列")&&draft.Lines.Count==0,"Unconfirmed actual column blocks adding even manually reviewed rows");}
+            try{window.AddReviewedRows();check(false,"Missing actual column rejected");}catch(BusinessException ex){check(ex.Message.Contains("实发列")&&draft.Lines.Count==0,"Missing actual column still blocks adding reviewed rows");}
             var retained=window.Rows[0];
             try{window.ApplyCloudResult(new([sourceRow,sourceRow with{MaterialCode=null!}],new Dictionary<ProductType,long?>(),[],true));check(false,"Row-model build should fail");}
             catch(NullReferenceException){check(window.Rows.Count==1&&ReferenceEquals(window.Rows[0],retained),"Failed row construction preserves the entire previous review collection");}
-            window.ApplyCloudResult(RecognitionParser.Parse(json));window.Rows[0].Quantity="2";window.Rows[0].Reviewed=true;
+            var compatible=RecognitionParser.Parse(json.Replace("\"actualQuantityColumn\":true","\"actualQuantityColumn\":\" TRUE \""));
+            window.ApplyCloudResult(compatible);window.Rows[0].Quantity="2";window.Rows[0].Reviewed=true;
+            check(compatible.ActualQuantityColumn&&window.StatusText.Text.Contains("兼容转换"),"Boolean string becomes a confirmed column with a visible compatibility warning");
             var timer=new DispatcherTimer{Interval=TimeSpan.FromMilliseconds(10)};
             timer.Tick+=(_,_)=>{timer.Stop();window.AddReviewedRows();};timer.Start();
             // Exercise the actual add action in a modal window so DialogResult can close it.
             window.Hide();window.ShowDialog();
-            check(draft.Lines.Count==1&&draft.Lines[0].Quantity=="2"&&service.GetProduct(id).Total==0,"Corrected and reviewed cloud row joins the draft without changing stock");
+            check(draft.Lines.Count==1&&draft.Lines[0].Quantity=="2"&&service.GetProduct(id).Total==0,"Corrected and reviewed boolean-string cloud row joins the draft without changing stock");
         }
         finally{window.Close();}
     }

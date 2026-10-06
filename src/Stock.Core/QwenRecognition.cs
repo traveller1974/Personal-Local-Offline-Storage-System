@@ -47,7 +47,7 @@ public sealed class QwenRecognitionService : IRecognitionService
         type由分区和名称判断，PC可为成车或充电器，PAA对应电池，Z1对应附件。单元格颜色文字原样输出，由本机校验。
         sectionTotals只取各分区明确标注的实发合计，缺失为null。数量为零的货品仍保留。
         顶层与每条rows明细都输出上述全部字段。文字字段缺失用空字符串，issues和warnings无内容用空数组，分区合计缺失用null。
-        rawQuantity使用字符串保存原文，不以0代替空白；actualQuantityColumn只能为true或false。不要输出额外字段或重复JSON键。
+        rawQuantity使用字符串保存原文，不以0代替空白；actualQuantityColumn必须是JSON布尔值，例如"actualQuantityColumn":true或"actualQuantityColumn":false，值不能带引号。无法确认实发列时返回false。不要输出额外字段或重复JSON键。
         """;
     private async Task<(JsonDocument Document,TimeSpan Elapsed)> Request(string path,bool locate,CancellationToken token)
     {
@@ -144,11 +144,7 @@ public static class RecognitionParser
             CheckDuplicates(root,"$");
             var warnings=new List<string>();
             Object(root,"$",warnings,"actualQuantityColumn","rows","sectionTotals","warnings");
-            var actual=false;
-            if(!root.TryGetProperty("actualQuantityColumn",out var column)||column.ValueKind==JsonValueKind.Null)
-                warnings.Add("actualQuantityColumn 缺失，实发列尚未确认。");
-            else if(column.ValueKind is JsonValueKind.True or JsonValueKind.False)actual=column.GetBoolean();
-            else throw Error("actualQuantityColumn","必须为布尔值");
+            var actual=ActualColumn(root,warnings);
             if(!root.TryGetProperty("rows",out var rowArray))throw Error("rows","字段缺失");
             if(rowArray.ValueKind!=JsonValueKind.Array)throw Error("rows","必须为明细数组");
             if(rowArray.GetArrayLength() is 0 or >1000)throw Error("rows","明细数量必须为1至1000行");
@@ -204,12 +200,30 @@ public static class RecognitionParser
             }
             if(!hasTotals)warnings.Add("分区合计未返回，请对照原图人工核对。");
             warnings.AddRange(Strings(root,"warnings","warnings"));
-            if(!actual)warnings.Add("未确认实发列，不能加入进货清单；请重新识别或手动录入。");
+            if(!actual)warnings.Add("实发列尚未确认，不能加入进货清单。请包含列标题重新识别，或返回进货清单手动录入。");
             return new(rows,totals,warnings.Distinct().ToList(),actual);
         }
         catch(JsonException){throw Error("$","JSON 无效、嵌套过深或输出截断");}
     }
     public static bool Quantity(string text,out long value)=>long.TryParse(text,NumberStyles.None,CultureInfo.InvariantCulture,out value)&&value is >=0 and <=Rules.MaxQuantity;
+    private static bool ActualColumn(JsonElement root,List<string> warnings)
+    {
+        if(!root.TryGetProperty("actualQuantityColumn",out var column)||column.ValueKind==JsonValueKind.Null)
+        {warnings.Add("actualQuantityColumn 缺失，实发列尚未确认。");return false;}
+        if(column.ValueKind is JsonValueKind.True or JsonValueKind.False)return column.GetBoolean();
+        if(column.ValueKind==JsonValueKind.String)
+        {
+            var value=column.GetString()!.Trim();
+            if(value.Equals("true",StringComparison.OrdinalIgnoreCase)||value.Equals("false",StringComparison.OrdinalIgnoreCase))
+            {
+                warnings.Add("实发列标志以文字形式返回，已兼容转换，请对照原图核对。");
+                return value.Equals("true",StringComparison.OrdinalIgnoreCase);
+            }
+        }
+        var kind=column.ValueKind switch{JsonValueKind.String=>"文字",JsonValueKind.Number=>"数字",JsonValueKind.Array=>"数组",JsonValueKind.Object=>"对象",_=>"未知"};
+        warnings.Add($"actualQuantityColumn 格式异常（返回类型：{kind}），实发列已标记为未确认。");
+        return false;
+    }
     private static BusinessException Error(string path,string reason)=>new($"识别 JSON {path}：{reason}。未加入进货清单。");
     private static IReadOnlyList<string> Strings(JsonElement obj,string key,string path)
     {

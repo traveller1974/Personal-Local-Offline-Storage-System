@@ -52,6 +52,20 @@ public sealed class QwenTests : IDisposable
         }));
         var service=new QwenRecognitionService(client,new("test-only",QwenConfiguration.Beijing));var result=await service.RecognizeAsync(image);Assert.Equal(1,count);Assert.Equal(123,result.InputTokens);Assert.Equal(77,result.OutputTokens);Assert.Equal(3,result.Rows.Count);
     }
+    [Theory]
+    [InlineData("\"true\"",true,"兼容转换")] [InlineData("\" FALSE \"",false,"兼容转换")]
+    [InlineData("1",false,"格式异常")] [InlineData("\"是\"",false,"格式异常")]
+    [InlineData("[]",false,"格式异常")] [InlineData("{}",false,"格式异常")]
+    [InlineData("null",false,"缺失")]
+    public async Task ActualColumnCompatibilityReachesTheClientWithoutRetries(string json,bool expected,string warning)
+    {
+        var sample=Sample();sample["actualQuantityColumn"]=JsonNode.Parse(json);var count=0;
+        using var client=new HttpClient(new Handler((_,_)=>
+        {count++;return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK){Content=new StringContent(Envelope(sample.ToJsonString()),Encoding.UTF8,"application/json")});}));
+        var result=await new QwenRecognitionService(client,new("test-only",QwenConfiguration.Beijing)).RecognizeAsync(image);
+        Assert.Equal(1,count);Assert.Equal(expected,result.ActualQuantityColumn);Assert.Equal(3,result.Rows.Count);
+        Assert.Contains(result.Warnings,w=>w.Contains(warning));Assert.Equal(123,result.InputTokens);Assert.Equal(77,result.OutputTokens);
+    }
     [Theory] [InlineData(401,"InvalidApiKey","鉴权")] [InlineData(402,"Arrearage","余额")] [InlineData(403,"Arrearage","余额")] [InlineData(403,"AccessDenied","权限")] [InlineData(429,"Throttling","限流")] [InlineData(500,"InternalError","失败")]
     public async Task FailuresAreDistinctAndNeverAutomaticallyRetried(int status,string code,string label)
     {

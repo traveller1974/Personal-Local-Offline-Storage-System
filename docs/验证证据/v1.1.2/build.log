@@ -1,0 +1,40 @@
+  正在确定要还原的项目…
+  所有项目均是最新的，无法还原。
+  Stock.Core -> D:\workspace\codex工作区\local-stock-manager\src\Stock.Core\bin\Release\net10.0\Stock.Core.dll
+  Stock.Tests -> D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Release\net10.0\Stock.Tests.dll
+D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Release\net10.0\Stock.Tests.dll (.NETCoreApp,Version=v10.0)的测试运行
+总共 1 个测试文件与指定模式相匹配。
+结果文件: D:\workspace\codex工作区\local-stock-manager\artifacts\tests\core.trx
+
+已通过! - 失败:     0，通过:   134，已跳过:     0，总计:   134，持续时间: 11 s - Stock.Tests.dll (net10.0)
+PASS: 3 real Chinese invoice OCR cases; UTF-8 paths; missing image, protocol and format errors.
+PASS: 3 real Chinese invoice OCR cases; UTF-8 paths; missing image, protocol and format errors.
+  Stock.Core -> D:\workspace\codex工作区\local-stock-manager\src\Stock.Core\bin\Release\net10.0\Stock.Core.dll
+  Stock.Desktop -> D:\workspace\codex工作区\local-stock-manager\src\Stock.Desktop\bin\Release\net10.0-windows\win-x64\LocalStockManager.dll
+  Stock.Desktop -> D:\workspace\codex工作区\local-stock-manager\artifacts\publish-v1.1.2\
+Collected notices: 25 Python and 32 NuGet packages.
+Command line defined: "PUBLISH_DIR=D:\workspace\codex������\local-stock-manager\artifacts\publish-v1.1.2"
+Command line defined: "OUTPUT_FILE=D:\workspace\codex������\local-stock-manager\dist\LocalStockManager-1.1.2-win-x64-Setup.exe"
+Command line defined: "APP_VERSION=1.1.2"
+Processing config: D:\workspace\codex������\local-stock-manager\tools\nsis\nsis-3.11\nsisconf.nsh
+Processing script file: "installer/installer.nsi" (UTF8)
+
+Processed 1 file, writing output (x86-unicode):
+
+Output: "D:\workspace\codex������\local-stock-manager\dist\LocalStockManager-1.1.2-win-x64-Setup.exe"
+Install: 4 pages (256 bytes), 2 sections (1 required) (4144 bytes), 1663 instructions (46564 bytes), 1178 strings (55722 bytes), 1 language table (310 bytes).
+Uninstall: 2 pages (192 bytes), 1 section (2072 bytes), 136 instructions (3808 bytes), 119 strings (2508 bytes), 1 language table (254 bytes).
+Datablock optimizer saved 18550 KiB (~4.2%).
+
+Using lzma (compress whole) compression.
+
+EXE header size:               53760 / 38912 bytes
+Install code:                          (107460 bytes)
+Install data:                          (431589698 bytes)
+Uninstall code+data:                   (35490 bytes)
+Compressed data:           135124157 / 431732648 bytes
+CRC (0xDBC0AFF9):                  4 / 4 bytes
+
+Total size:                135177921 / 431771564 bytes (31.3%)
+Installer: D:\workspace\codex工作区\local-stock-manager\dist\LocalStockManager-1.1.2-win-x64-Setup.exe
+SHA-256: 67e44fb033a9000da216f6b8555570d150deb998a254490030e67e808718a8d0
