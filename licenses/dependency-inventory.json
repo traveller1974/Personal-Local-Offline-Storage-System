@@ -268,6 +268,16 @@
       "notices": 0
     },
     {
+      "name": "Microsoft.NET.ILLink.Tasks",
+      "version": "10.0.11",
+      "authors": "Microsoft",
+      "copyright": "© Microsoft Corporation. All rights reserved.",
+      "license": "MIT",
+      "licenseUrl": "https://licenses.nuget.org/MIT",
+      "homepage": "https://dot.net/",
+      "notices": 1
+    },
+    {
       "name": "Microsoft.NET.Test.Sdk",
       "version": "17.14.1",
       "authors": "Microsoft",

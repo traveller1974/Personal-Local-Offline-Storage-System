@@ -1,0 +1,15 @@
+{
+  "success": true,
+  "rows": 200000,
+  "documents": 10000,
+  "products": 1000,
+  "queryMs": 94.7613,
+  "summaryMs": 86.5595,
+  "exportMs": 3566.6909,
+  "exportRows": 200000,
+  "cancellationVerified": true,
+  "processorCount": 16,
+  "os": "Microsoft Windows NT 10.0.26200.0",
+  "runtime": "10.0.11",
+  "database": "D:\\workspace\\codex\u5DE5\u4F5C\u533A\\local-stock-manager\\artifacts\\v1.1\\performance\\run-bc6808b57eda4226bc72bf16a2164f10\\stock.db"
+}

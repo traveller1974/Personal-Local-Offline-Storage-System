@@ -2,8 +2,11 @@
   <Folder Name="/src/">
     <Project Path="src/Stock.Core/Stock.Core.csproj" />
     <Project Path="src/Stock.Desktop/Stock.Desktop.csproj" />
+    <Project Path="src/Stock.Recognition/Stock.Recognition.csproj" />
+    <Project Path="src/Stock.RecognitionLab/Stock.RecognitionLab.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Stock.Tests/Stock.Tests.csproj" />
+    <Project Path="tests/Stock.Recognition.Tests/Stock.Recognition.Tests.csproj" />
   </Folder>
 </Solution>

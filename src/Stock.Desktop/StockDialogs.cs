@@ -10,10 +10,10 @@ public static class StockDialogs
     public static Product? Product(Window owner,StockService service,Product? original=null,bool zeroOnly=false,string name="",string spec="",ProductType type=ProductType.Accessory,string color="",string code="")
     {
         var w=Ui.Dialog(owner,original is null?"新增完整身份货品":"货品资料与状态",660,850);Product? saved=null;var dock=new DockPanel{Margin=new(26)};
-        var p=new StackPanel();var nameBox=new TextBox{Text=original?.Name??name,MaxLength=120};var specBox=new TextBox{Text=original?.Spec??spec,MaxLength=500};var unit=new TextBox{Text=original?.Unit??"件",IsReadOnly=true,MaxLength=20};
+        var p=new StackPanel();var nameBox=new ProductTermBox{Service=service,TermField="Name",Text=original?.Name??name,MaxLength=120};var specBox=new ProductTermBox{Service=service,TermField="Spec",Text=original?.Spec??spec,MaxLength=500,AcceptsReturn=true};var unit=new TextBox{Text=original?.Unit??"件",IsReadOnly=true,MaxLength=20};
         var choices=new[]{ProductType.Unknown,ProductType.Vehicle,ProductType.Battery,ProductType.Charger,ProductType.Accessory}.Select(t=>new Choice<ProductType>(Rules.TypeName(t),t)).ToList();
         var typeBox=new ComboBox{ItemsSource=choices,SelectedItem=choices.Single(t=>t.Value==(original?.Type??type))};
-        var colorBox=new TextBox{Text=original?.Color??color,MaxLength=120};var codeBox=new TextBox{Text=original?.MaterialCode??code,MaxLength=120};
+        var colorBox=new ProductTermBox{Service=service,TermField="Color",Text=original?.Color??color,MaxLength=120};var codeBox=new TextBox{Text=original?.MaterialCode??code,MaxLength=120};
         typeBox.SelectionChanged+=(_,_)=>unit.Text=typeBox.SelectedItem is Choice<ProductType> selected&&selected.Value!=ProductType.Unknown?Rules.Unit(selected.Value):original?.Unit??"待确认";
         unit.Text=(original?.Type??type)==ProductType.Unknown?original?.Unit??"待确认":Rules.Unit(original?.Type??type);
         Ui.Field(p,"货物类型",typeBox);Ui.Field(p,"货品名称（必填）",nameBox);Ui.Field(p,"完整规格 / 型号",specBox);Ui.Field(p,"颜色（电池、充电器留空）",colorBox);Ui.Field(p,"物料编码（无编码须人工确认留空）",codeBox);Ui.Field(p,"系统单位",unit);

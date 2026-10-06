@@ -1,10 +1,14 @@
 ﻿param([Parameter(Mandatory=$true)][string]$BaselinePublish,[string]$BaselineVersion='1.1.1',
- [string]$TargetVersion='1.1.2',[string]$TargetPublish='',[string]$OutputDirectory='')
+ [string]$TargetVersion='1.1.2',[string]$TargetPublish='',[string]$OutputDirectory='',[switch]$EmbeddedRecognition,[switch]$CleanupPreviousTest)
 $ErrorActionPreference='Stop'
 $projectRoot=[IO.Path]::GetFullPath((Split-Path $PSScriptRoot -Parent))
 foreach($version in @($BaselineVersion,$TargetVersion)){if($version -notmatch '^\d+\.\d+\.\d+$'){throw 'Versions must use major.minor.patch'}}
 if(-not $TargetPublish){$TargetPublish=Join-Path $projectRoot ('artifacts/publish-v'+$TargetVersion)}
-if(-not $OutputDirectory){$OutputDirectory=Join-Path $projectRoot ('artifacts/v'+$TargetVersion+'/install-patch-'+[guid]::NewGuid().ToString('N'))}
+if(-not $OutputDirectory){
+ # Windows process working directories remain limited even when managed IO accepts long paths.
+ $testName=if($EmbeddedRecognition){'i-'+[guid]::NewGuid().ToString('N').Substring(0,8)}else{'install-patch-'+[guid]::NewGuid().ToString('N')}
+ $OutputDirectory=Join-Path $projectRoot ('artifacts/v'+$TargetVersion+'/'+$testName)
+}
 $testRoot=[IO.Path]::GetFullPath($OutputDirectory)
 if(-not $testRoot.StartsWith($projectRoot+[IO.Path]::DirectorySeparatorChar,[StringComparison]::OrdinalIgnoreCase)){throw 'Test output must stay within the project'}
 if(Test-Path -LiteralPath $testRoot){throw 'Use a fresh test directory'}
@@ -20,7 +24,24 @@ $target=[IO.Path]::GetFullPath((Join-Path $testRoot '中文 安装目录'))
 if(-not $target.StartsWith($testRoot+[IO.Path]::DirectorySeparatorChar,[StringComparison]::OrdinalIgnoreCase)){throw 'Unsafe test installation path'}
 $testId='LocalStockManager.PatchInstallTest'
 $registry='HKCU:\Software\'+$testId
-if(Test-Path -LiteralPath $registry){throw 'An earlier patch test is registered; resolve that test first'}
+if(Test-Path -LiteralPath $registry){
+ if(-not $CleanupPreviousTest){throw 'An earlier patch test is registered; resolve that test first'}
+ $previousResult=Get-Content -Raw -LiteralPath (Join-Path $projectRoot ('artifacts/v'+$TargetVersion+'/install-patch-results.json')) | ConvertFrom-Json
+ $previousRoot=[IO.Path]::GetFullPath($previousResult.testDirectory)
+ $previousTarget=[IO.Path]::GetFullPath((Join-Path $previousRoot '中文 安装目录'))
+ $registeredTarget=[IO.Path]::GetFullPath((Get-ItemProperty -LiteralPath $registry).InstallPath)
+ $allowedPreviousRoot=[IO.Path]::GetFullPath((Join-Path $projectRoot ('artifacts/v'+$TargetVersion)))
+ if($previousResult.success -or $previousResult.targetVersion -ne $TargetVersion -or
+    -not $previousRoot.StartsWith($allowedPreviousRoot+[IO.Path]::DirectorySeparatorChar,[StringComparison]::OrdinalIgnoreCase) -or
+    $registeredTarget -ne $previousTarget -or
+    (Get-Content -Raw -LiteralPath (Join-Path $previousTarget 'installed.marker')).Trim() -ne 'LocalStockManager-1b2162c4-34c7-4c1c-b124-550f11084150'){
+  throw 'Previous test registration does not match a known failed isolated installation'
+ }
+ $cleanup=Start-Process -FilePath (Join-Path $previousTarget 'Uninstall.exe') -ArgumentList '/S' -WindowStyle Hidden -PassThru -Wait
+ $cleanupDeadline=[DateTime]::UtcNow.AddSeconds(45)
+ while((Test-Path -LiteralPath $registry) -and [DateTime]::UtcNow -lt $cleanupDeadline){Start-Sleep -Milliseconds 300}
+ if($cleanup.ExitCode -ne 0 -or (Test-Path -LiteralPath $registry)){throw 'Previous isolated test could not be cleaned up'}
+}
 $realBefore=Get-ItemProperty -LiteralPath 'HKCU:\Software\LocalStockManager' -ErrorAction SilentlyContinue
 $realInstallPath=$realBefore.InstallPath
 $nsis=Join-Path $projectRoot 'tools/nsis/nsis-3.11/makensis.exe'
@@ -60,7 +81,7 @@ try {
  Assert-Test ((Get-FileHash -LiteralPath (Join-Path $oldData 'stock.db') -Algorithm SHA256).Hash -eq $beforeDatabase) 'Patch installation leaves the existing v2 database unchanged before application startup'
  Assert-Test ((Fingerprint $storedRoot) -eq $before) 'Patch installation preserves every stored database, photo, DPAPI setting and backup byte for byte'
  Assert-Test ([Diagnostics.FileVersionInfo]::GetVersionInfo((Join-Path $target 'LocalStockManager.dll')).ProductVersion.Split('+')[0] -eq $TargetVersion) ('Installed application reports version '+$TargetVersion)
- & (Join-Path $PSScriptRoot 'verify.ps1') -ApplicationPath (Join-Path $target 'LocalStockManager.exe') -OutputDirectory (Join-Path $testRoot 'patched-smoke')
+ & (Join-Path $PSScriptRoot 'verify.ps1') -ApplicationPath (Join-Path $target 'LocalStockManager.exe') -OutputDirectory (Join-Path $testRoot 'patched-smoke') -RecognitionIntegration:$EmbeddedRecognition
  Assert-Test ((Fingerprint $storedRoot) -eq $before) 'Independent installed regression checks do not touch existing baseline data'
  Install $newSetup
  Assert-Test ((Fingerprint $storedRoot) -eq $before) 'Reinstalling the patch preserves every previously stored file'

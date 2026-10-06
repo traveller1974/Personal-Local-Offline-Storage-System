@@ -9,6 +9,8 @@ namespace Stock.Desktop;
 
 public static class QwenSettings
 {
+    public const string EmbeddedRecognitionSwitch="LocalStockManager.UseEmbeddedRecognition";
+    public static bool UsesEmbeddedRecognition=>AppContext.TryGetSwitch(EmbeddedRecognitionSwitch,out var enabled)&&enabled;
     private static readonly HttpClient Client=new(new SocketsHttpHandler{UseProxy=false,AllowAutoRedirect=false}){Timeout=Timeout.InfiniteTimeSpan};
     private static string PathFor(StockService service)=>Path.Combine(Path.GetDirectoryName(service.DataDirectory)!,"Settings","qwen.dpapi");
     public static QwenConfiguration Load(StockService service)
@@ -23,7 +25,12 @@ public static class QwenSettings
         try{File.WriteAllBytes(temp,Protect(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(configuration)),true));File.Move(temp,path,true);}
         finally{if(File.Exists(temp))File.Delete(temp);}
     }
-    public static IRecognitionService Service(StockService service)=>new QwenRecognitionService(Client,Load(service));
+    public static IRecognitionService Service(StockService service)=>CreateService(Load(service));
+    internal static IRecognitionService CreateService(QwenConfiguration configuration)
+    {
+        var original=new QwenRecognitionService(Client,configuration);
+        return UsesEmbeddedRecognition?new EmbeddedRecognitionService(configuration,original):original;
+    }
     [StructLayout(LayoutKind.Sequential)] private struct Blob{public int Size;public IntPtr Data;}
     [DllImport("crypt32.dll",SetLastError=true,CharSet=CharSet.Unicode)]
     [return:MarshalAs(UnmanagedType.Bool)] private static extern bool CryptProtectData(ref Blob input,string? description,IntPtr entropy,IntPtr reserved,IntPtr prompt,uint flags,out Blob output);

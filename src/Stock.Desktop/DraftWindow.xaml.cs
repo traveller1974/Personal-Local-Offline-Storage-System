@@ -21,6 +21,7 @@ public partial class DraftWindow : Window
         Manufacturer.Visibility=kind==DocumentKind.Purchase?Visibility.Visible:Visibility.Collapsed;
         SaleChannel.Visibility=kind==DocumentKind.Sale?Visibility.Visible:Visibility.Collapsed;
         OcrButton.Visibility=kind==DocumentKind.Purchase?Visibility.Visible:Visibility.Collapsed;
+        NewProductButton.Visibility=kind==DocumentKind.Purchase?Visibility.Visible:Visibility.Collapsed;
         TempDirectory=Path.Combine(Path.GetDirectoryName(service.DataDirectory)!,"Temp","draft-"+Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(TempDirectory);ReloadProducts();
         Closed+=(_,_)=>{try{Directory.Delete(TempDirectory,true);}catch(IOException){}catch(UnauthorizedAccessException){}};
@@ -31,7 +32,15 @@ public partial class DraftWindow : Window
     private void PreviousProducts(object sender,RoutedEventArgs e){productPage=Math.Max(0,productPage-1);ReloadProducts();}
     private void NextProducts(object sender,RoutedEventArgs e){if((productPage+1)*100<productCount)productPage++;ReloadProducts();}
     private void ChannelChanged(object sender,SelectionChangedEventArgs e) { if(ViewModel is not null)ViewModel.Channel=SaleChannel.SelectedValue as string??""; }
-    private void Add(object sender,RoutedEventArgs e) => Ui.Try(()=>{ if(ProductPicker.SelectedItem is not Product p)throw new BusinessException("请选择已有货品；新增货品请先返回库存首页。"); ViewModel.Add(p,AddQuantity.Number); });
+    private void Add(object sender,RoutedEventArgs e) => Ui.Try(()=>{ if(ProductPicker.SelectedItem is not Product p)throw new BusinessException(ViewModel.Kind==DocumentKind.Purchase?"请选择已有货品，或点击新建货品填写资料。":"请选择已有货品；新增货品请先返回库存首页。"); ViewModel.Add(p,AddQuantity.Number); });
+    private void NewProduct(object sender,RoutedEventArgs e) => Ui.Try(()=>
+    {
+        var created=StockDialogs.Product(this,ViewModel.Service,zeroOnly:true,name:ProductSearch.Text.Trim());
+        if(created is null)return;
+        productFilter=null;productSearch="";productPage=0;ProductSearch.Text="";ReloadProducts();
+        ProductPicker.SelectedItem=ProductPicker.Items.Cast<Product>().FirstOrDefault(p=>p.Id==created.Id);
+        if(ProductPicker.SelectedItem is null){ProductPicker.ItemsSource=new[]{created};ProductPicker.SelectedItem=created;}
+    });
     private void Remove(object sender,RoutedEventArgs e) { if(((Button)sender).Tag is DraftLine line)ViewModel.Lines.Remove(line); }
     private void Cancel(object sender,RoutedEventArgs e) => Close();
     private void Preview(object sender,RoutedEventArgs e) => Ui.Try(()=>

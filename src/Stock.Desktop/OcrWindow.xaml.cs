@@ -16,6 +16,7 @@ namespace Stock.Desktop;
 public partial class OcrWindow : Window
 {
     public ObservableCollection<OcrReviewRow> Rows { get; }=[];
+    public StockService Stock => draft.Service;
     private readonly DraftViewModel draft;
     private readonly ImageSession image;
     private OcrResponse? response;
@@ -34,10 +35,16 @@ public partial class OcrWindow : Window
         Closed+=(_,_)=>{closed=true;generation++;cancellation?.Cancel();CancelSelection();image.Dispose();};
     }
     private void Choose(object sender,RoutedEventArgs e) {var d=new OpenFileDialog{Filter="货单照片|*.jpg;*.jpeg;*.png"};if(d.ShowDialog(this)==true)Load(d.FileName);}
-    public void Load(string path)=>Ui.Try(()=>{if(busy)return;CancelSelection();image.Load(path);Rows.Clear();response=null;cloudResult=null;regions=null;ColumnPicker.ItemsSource=null;tableRange=false;UploadConfirm.IsChecked=false;TotalOverride.Text="";Zoom.Value=Math.Clamp(520.0/image.Width,.1,1.0);UpdateImage();ImageScroller.ScrollToHome();SuggestTable();StatusText.Text="请确认表格四角并应用，或手动框选。上传范围须包含表头、货品和分区合计，排除表外资料。";});
+    public void Load(string path)=>Ui.Try(()=>
+    {
+        if(busy)return;CancelSelection();image.Load(path);ReplaceRows([]);response=null;cloudResult=null;regions=null;
+        ColumnPicker.ItemsSource=null;tableRange=false;UploadConfirm.IsChecked=false;TotalOverride.Text="";UpdateResultSummary();
+        Zoom.Value=Math.Clamp(520.0/image.Width,.1,1.0);UpdateImage();ImageScroller.ScrollToHome();SuggestTable();
+        StatusText.Text="请确认表格四角并应用，或手动框选。上传范围须包含表头、货品和分区合计，排除表外资料。";
+    });
     private void UpdateImage(){if(image.Width==0)return;PhotoImage.Source=Ui.Bitmap(image.ProcessedPath);ImageHost.Width=image.Width*Zoom.Value;ImageHost.Height=image.Height*Zoom.Value;Overlay.Width=ImageHost.Width;Overlay.Height=ImageHost.Height;Selection.Visibility=RowHighlight.Visibility=Visibility.Collapsed;DrawCorners();}
     private void Zoomed(object sender,RoutedPropertyChangedEventArgs<double> e){if(image is not null){CancelSelection();UpdateImage();}}
-    private void Invalidate(){generation++;Rows.Clear();response=null;cloudResult=null;regions=null;UploadConfirm.IsChecked=false;ColumnPicker.ItemsSource=null;TotalOverride.Text="";UpdateImage();ImageScroller.ScrollToHome();StatusText.Text="照片已处理，请确认截图范围后重新识别。";}
+    private void Invalidate(){generation++;ReplaceRows([]);response=null;cloudResult=null;regions=null;UploadConfirm.IsChecked=false;ColumnPicker.ItemsSource=null;TotalOverride.Text="";UpdateResultSummary();UpdateImage();ImageScroller.ScrollToHome();StatusText.Text="照片已处理，请确认截图范围后重新识别。";}
     private void RotateLeft(object sender,RoutedEventArgs e)=>Ui.Try(()=>{CancelSelection();image.Rotate(false);tableRange=false;Invalidate();SuggestTable();});
     private void RotateRight(object sender,RoutedEventArgs e)=>Ui.Try(()=>{CancelSelection();image.Rotate(true);tableRange=false;Invalidate();SuggestTable();});
     private void Reset(object sender,RoutedEventArgs e)=>Ui.Try(()=>{CancelSelection();image.Reset();tableRange=false;Invalidate();SuggestTable();});
@@ -80,11 +87,11 @@ public partial class OcrWindow : Window
         if(!offline&&(!tableRange||UploadConfirm.IsChecked!=true)){StatusText.Text="请先应用四角或手动裁剪，并确认只上传表格截图。";return;}
         try{if(!offline){image.PrepareCloudImage();UpdateImage();}}catch(Exception ex){StatusText.Text=ex.Message;return;}
         busy=true;Toolbar.IsEnabled=ReviewPanel.IsEnabled=RecognizeButton.IsEnabled=AddRowsButton.IsEnabled=false;CancelOcrButton.Visibility=Visibility.Visible;
-        cancellation=new();var token=cancellation.Token;var requestGeneration=++generation;StatusText.Text=offline?"正在本机识别，最多等待120秒。":"正在调用百炼 qwen3.5-ocr，最多等待90秒；不会自动重试。";
+        cancellation=new();var token=cancellation.Token;var requestGeneration=++generation;StatusText.Text=offline?"正在本机识别，最多等待120秒。":$"正在调用百炼 qwen3.5-ocr，最多等待{(QwenSettings.UsesEmbeddedRecognition?120:90)}秒；不会自动重试。";
         try
         {
             if(offline)
-            {var result=await new OcrClient().RecognizeAsync(image.ProcessedPath,token);if(closed||requestGeneration!=generation||token.IsCancellationRequested)return;var parsed=InvoiceParser.Parse(result);var next=BuildOfflineRows(parsed);selectingColumn=true;ColumnPicker.ItemsSource=parsed.QuantityColumns;ColumnPicker.SelectedIndex=parsed.QuantityColumns.Count==1?0:-1;selectingColumn=false;ReplaceRows(next);response=result;cloudResult=null;TotalOverride.Text="";StatusText.Text=parsed.Message;}
+            {var result=await new OcrClient().RecognizeAsync(image.ProcessedPath,token);if(closed||requestGeneration!=generation||token.IsCancellationRequested)return;var parsed=InvoiceParser.Parse(result);var next=BuildOfflineRows(parsed);selectingColumn=true;ColumnPicker.ItemsSource=parsed.QuantityColumns;ColumnPicker.SelectedIndex=parsed.QuantityColumns.Count==1?0:-1;selectingColumn=false;ReplaceRows(next);response=result;cloudResult=null;TotalOverride.Text="";UpdateResultSummary();StatusText.Text=parsed.Message;}
             else
             {var result=await QwenSettings.Service(draft.Service).RecognizeAsync(image.ProcessedPath,token);if(closed||requestGeneration!=generation||token.IsCancellationRequested)return;ApplyCloudResult(result);}
         }
@@ -94,19 +101,67 @@ public partial class OcrWindow : Window
     }
     private void CancelOcr(object sender,RoutedEventArgs e){generation++;cancellation?.Cancel();StatusText.Text="识别已取消，迟到响应不会覆盖明细。";}
     private List<OcrReviewRow> BuildOfflineRows(InvoiceParseResult parsed)=>parsed.Rows.Select(row=>new OcrReviewRow(row,draft.Service.ProductPage(search:row.Name).Items)).ToList();
-    private void ReplaceRows(IReadOnlyList<OcrReviewRow> next){Rows.Clear();foreach(var row in next)Rows.Add(row);}
+    private void ReplaceRows(IReadOnlyList<OcrReviewRow> next)
+    {
+        foreach(var row in Rows)row.PropertyChanged-=ReviewRowChanged;
+        Rows.Clear();foreach(var row in next){Rows.Add(row);row.PropertyChanged+=ReviewRowChanged;}
+    }
+    private void ReviewRowChanged(object? sender,System.ComponentModel.PropertyChangedEventArgs e)
+    {if(e.PropertyName is nameof(OcrReviewRow.Quantity) or nameof(OcrReviewRow.Type))UpdateResultSummary();}
+    private void UpdateResultSummary()
+    {
+        ColumnPicker.Visibility=cloudResult is null?Visibility.Visible:Visibility.Collapsed;
+        if(cloudResult is null)
+        {
+            ResultSummaryText.Text=Rows.Count==0?"识别后在这里查看实发列状态和分区合计。":$"本机备用识别：{Rows.Count}行，请对照原图核对。";
+            SectionTotalsList.ItemsSource=null;ResultWarningsText.Text="";return;
+        }
+        ResultSummaryText.Text=$"识别{Rows.Count}行；"+(cloudResult.ActualQuantityColumn?"实发列已识别，仍需逐行核对。":"实发列尚未确认，不能加入进货清单。");
+        var hasUnknown=Rows.Any(r=>r.Type==ProductType.Unknown);
+        if(hasUnknown)ResultSummaryText.Text+=" 存在未确认货品类型，分区明细合计待核对。";
+        ResultWarningsText.Text=string.Join("；",cloudResult.Warnings);
+        var types=new[]{ProductType.Vehicle,ProductType.Battery,ProductType.Charger,ProductType.Accessory};
+        SectionTotalsList.ItemsSource=types.Select(type=>
+        {
+            var rows=Rows.Where(r=>r.Type==type).ToList();
+            var calculated=!hasUnknown&&rows.All(r=>IntegerInput.TryParse(r.Quantity,0,out _))?rows.Sum(r=>long.Parse(r.Quantity)).ToString():"待核对";
+            var stated=cloudResult.SectionTotals.TryGetValue(type,out var total)&&total.HasValue?total.Value.ToString():"未提供";
+            return $"{Rules.TypeName(type)}：原单实发合计 {stated}；当前明细合计 {calculated} {Rules.Unit(type)}";
+        }).ToArray();
+    }
     internal void ApplyCloudResult(RecognitionResult result)
     {
         var next=result.Rows.Select(row=>new OcrReviewRow(row,draft.Service.ProductPage(new ProductFilter([row.Type],[row.Name],[row.Spec],[row.Color],row.MaterialCode)).Items)).ToList();
         ReplaceRows(next);cloudResult=result;response=null;regions=null;RowHighlight.Visibility=Visibility.Collapsed;ColumnPicker.ItemsSource=null;TotalOverride.Text="";
+        UpdateResultSummary();
         StatusText.Text=$"识别耗时{result.Elapsed.TotalSeconds:F1}秒，输入Token：{result.InputTokens?.ToString()??"未返回"}，输出Token：{result.OutputTokens?.ToString()??"未返回"}。全部明细需人工核对。"+string.Join("；",result.Warnings);
     }
-    private void ShowParse(InvoiceParseResult parsed){var next=BuildOfflineRows(parsed);ReplaceRows(next);StatusText.Text=parsed.Message;}
+    private void ShowParse(InvoiceParseResult parsed){var next=BuildOfflineRows(parsed);ReplaceRows(next);UpdateResultSummary();StatusText.Text=parsed.Message;}
     private void Associate(object sender,RoutedEventArgs e)=>Ui.Try(()=>{if(((Button)sender).Tag is not OcrReviewRow row)return;var p=QueryDialogs.PickProduct(this,draft.Service);if(p is null)return;row.RefreshProducts(row.Products.Where(x=>x.Id!=p.Id).Append(p).ToList(),p);});
+    private async void TermPicked(object sender,RoutedEventArgs e)
+    {
+        if(sender is not Stock.Desktop.Controls.ProductTermBox { DataContext: OcrReviewRow row }||busy)return;
+        var identity=(row.Type,row.Name,row.Spec,row.Color,row.MaterialCode);
+        var currentGeneration=generation;
+        try
+        {
+            var filter=row.Cloud?new ProductFilter([identity.Type],[identity.Name],[identity.Spec],[identity.Color],identity.MaterialCode):new ProductFilter(Names:[identity.Name],Specs:[identity.Spec]);
+            var products=await Task.Run(()=>draft.Service.ProductPage(filter).Items);
+            if(closed||busy||currentGeneration!=generation||!Rows.Contains(row)||identity!=(row.Type,row.Name,row.Spec,row.Color,row.MaterialCode))return;
+            // Refresh the exact candidates without selecting a different identity or marking it reviewed.
+            row.RefreshProducts(products);
+        }
+        catch(Exception ex){if(!closed)StatusText.Text="词条已填入，关联货品未能刷新，请点击搜索关联货品。"+ex.Message;}
+    }
     private void ColumnChanged(object sender,SelectionChangedEventArgs e){if(!selectingColumn&&response is not null)ShowParse(InvoiceParser.Parse(response,(ColumnPicker.SelectedItem as QuantityColumn)?.Id));}
     private void NewProduct(object sender,RoutedEventArgs e)=>Ui.Try(()=>
-    {if(((Button)sender).Tag is not OcrReviewRow row)return;var created=StockDialogs.Product(this,draft.Service,zeroOnly:true,name:row.Name,spec:row.Spec,type:row.Type,color:row.Color,code:row.MaterialCode);if(created is null)return;foreach(var r in Rows)r.RefreshProducts(r.Products.Where(x=>x.Id!=created.Id).Append(created).ToList(),r==row?created:null);});
-    private void RemoveRow(object sender,RoutedEventArgs e){if(((Button)sender).Tag is OcrReviewRow row)Rows.Remove(row);}
+    {if(((Button)sender).Tag is not OcrReviewRow row)return;var created=StockDialogs.Product(this,draft.Service,zeroOnly:true,name:row.Name,spec:row.Spec,type:row.Type,color:row.Color,code:row.MaterialCode);if(created is not null)ApplyCreatedProduct(row,created);});
+    internal void ApplyCreatedProduct(OcrReviewRow row,Product created)
+    {
+        row.Type=created.Type;row.Name=created.Name;row.Spec=created.Spec;row.Color=created.Color??"";row.MaterialCode=created.MaterialCode??"";
+        foreach(var r in Rows)r.RefreshProducts(r.Products.Where(x=>x.Id!=created.Id).Append(created).ToList(),r==row?created:null);
+    }
+    private void RemoveRow(object sender,RoutedEventArgs e){if(((Button)sender).Tag is OcrReviewRow row){row.PropertyChanged-=ReviewRowChanged;Rows.Remove(row);UpdateResultSummary();}}
     private async void Locate(object sender,RoutedEventArgs e)
     {
         if(((Button)sender).Tag is not OcrReviewRow row||busy)return;

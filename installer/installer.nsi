@@ -4,7 +4,7 @@ Unicode true
 !include "LogicLib.nsh"
 !include "FileFunc.nsh"
 !ifndef APP_VERSION
- !define APP_VERSION "1.1.2"
+ !define APP_VERSION "1.1.3"
 !endif
 !ifndef APP_ID
  !define APP_ID "LocalStockManager"

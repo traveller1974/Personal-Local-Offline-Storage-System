@@ -11,6 +11,11 @@ public sealed class OcrReviewRow : Observable
     public InvoiceRow Source { get; }
     public RecognizedRow? CloudSource { get; }
     public bool Cloud => CloudSource is not null;
+    public string OriginalOrder => CloudSource?.OriginalOrder??"";
+    public string RawName => CloudSource?.RawName??Source.Name;
+    public string RawQuantity => CloudSource?.RawQuantity??Source.RawQuantity;
+    public string SectionEvidence => CloudSource?.SectionEvidence??"";
+    public string RecognitionIssues => CloudSource is null?"":string.Join("；",CloudSource.Issues);
     public IReadOnlyList<ProductType> Types { get; }=[ProductType.Unknown,ProductType.Vehicle,ProductType.Battery,ProductType.Charger,ProductType.Accessory];
     public IReadOnlyList<Choice<ProductType>> TypeChoices { get; }=Enum.GetValues<ProductType>().Select(t=>new Choice<ProductType>(Rules.TypeName(t),t)).ToList();
     public ProductType Type { get=>type;set{if(Set(ref type,value)){Rematch();Changed(nameof(Unit));}} }

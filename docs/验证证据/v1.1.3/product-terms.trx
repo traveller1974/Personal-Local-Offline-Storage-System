@@ -1,0 +1,88 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="1c8f4ad2-3f08-4c46-bb54-0bceccb99182" name="xiaozulin@LAPTOP-HQMKD56I 2026-10-07 01:10:38" runUser="LAPTOP-HQMKD56I\xiaozulin" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-10-07T01:10:38.1036244+08:00" queuing="2026-10-07T01:10:38.1036249+08:00" start="2026-10-07T01:10:35.8306118+08:00" finish="2026-10-07T01:10:38.4700472+08:00" />
+  <TestSettings name="default" id="6150f372-49f6-4e24-a1e7-1df46ac2b125">
+    <Deployment runDeploymentRoot="xiaozulin_LAPTOP-HQMKD56I_2026-10-07_01_10_38" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="0b1ab506-2047-4bd4-a942-0da0e7b82f40" testId="6692d60d-da8c-34b7-3cb1-140b21e97a1f" testName="Stock.Tests.ProductTermTests.ResultLimitIsDeterministicAndNewTermsBecomeAvailable" computerName="LAPTOP-HQMKD56I" duration="00:00:00.6978326" startTime="2026-10-07T01:10:37.5037569+08:00" endTime="2026-10-07T01:10:38.2016138+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="0b1ab506-2047-4bd4-a942-0da0e7b82f40" />
+    <UnitTestResult executionId="3f6af409-5123-4823-825b-b271676e9512" testId="12fe3fb9-ea71-e8b2-1452-f415de311600" testName="Stock.Tests.ProductTermTests.SqlAndWildcardCharactersAreLiteralSearchText" computerName="LAPTOP-HQMKD56I" duration="00:00:00.0933216" startTime="2026-10-07T01:10:37.3723447+08:00" endTime="2026-10-07T01:10:37.4654542+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="3f6af409-5123-4823-825b-b271676e9512" />
+    <UnitTestResult executionId="33d5be2b-2492-41bc-8f1b-1b30f5c4264d" testId="58ff9ea9-73a6-083c-baff-1bcbb60233bd" testName="Stock.Tests.ProductTermTests.OnlyRequestedFieldsHaveSuggestions(field: &quot;MaterialCode&quot;)" computerName="LAPTOP-HQMKD56I" duration="00:00:00.0751530" startTime="2026-10-07T01:10:36.9389743+08:00" endTime="2026-10-07T01:10:37.0218176+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="33d5be2b-2492-41bc-8f1b-1b30f5c4264d" />
+    <UnitTestResult executionId="d3e78f57-6e66-4324-bf27-3ac069334ddd" testId="5ccf7333-4867-e550-e476-7cf9f00388b4" testName="Stock.Tests.ProductTermTests.EmptyColorShowsDistinctNonemptyTerms" computerName="LAPTOP-HQMKD56I" duration="00:00:00.0960397" startTime="2026-10-07T01:10:38.3134079+08:00" endTime="2026-10-07T01:10:38.4093398+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d3e78f57-6e66-4324-bf27-3ac069334ddd" />
+    <UnitTestResult executionId="55f31f02-44e7-4fae-ab01-246af583035d" testId="d0a1b145-d6e2-536c-5e68-ea0756ba8d50" testName="Stock.Tests.ProductTermTests.CancelledSearchDoesNotReturnResults" computerName="LAPTOP-HQMKD56I" duration="00:00:00.0380408" startTime="2026-10-07T01:10:37.4657438+08:00" endTime="2026-10-07T01:10:37.5036146+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="55f31f02-44e7-4fae-ab01-246af583035d" />
+    <UnitTestResult executionId="3bb78e47-9d59-485a-b172-e06c9cbde7d7" testId="6037c33d-66b3-7453-583f-5898267c7b45" testName="Stock.Tests.ProductTermTests.SpecsKeepFullMultilineValueAndIgnoreEmptyValues" computerName="LAPTOP-HQMKD56I" duration="00:00:00.1585255" startTime="2026-10-07T01:10:37.0981926+08:00" endTime="2026-10-07T01:10:37.2555676+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="3bb78e47-9d59-485a-b172-e06c9cbde7d7" />
+    <UnitTestResult executionId="4a45ac2d-b928-4ed7-b163-f9d18ab7f3d8" testId="ccd8c81e-1eba-863b-d81b-62b05409e6a2" testName="Stock.Tests.ProductTermTests.OnlyRequestedFieldsHaveSuggestions(field: &quot;Name;DROP TABLE Product&quot;)" computerName="LAPTOP-HQMKD56I" duration="00:00:00.0363043" startTime="2026-10-07T01:10:37.0314980+08:00" endTime="2026-10-07T01:10:37.0586215+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4a45ac2d-b928-4ed7-b163-f9d18ab7f3d8" />
+    <UnitTestResult executionId="292a1e6e-8f5e-4d46-9bb9-a9bdfdb141c8" testId="59ae8fb2-f491-a6b7-3ae5-568924faa25f" testName="Stock.Tests.ProductTermTests.SuggestionsDoNotCreateProductsOrChangeStockAndAllowNewNames" computerName="LAPTOP-HQMKD56I" duration="00:00:00.1162067" startTime="2026-10-07T01:10:37.2557278+08:00" endTime="2026-10-07T01:10:37.3720044+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="292a1e6e-8f5e-4d46-9bb9-a9bdfdb141c8" />
+    <UnitTestResult executionId="a45040f0-49c1-49dd-ad69-9693de05a952" testId="32ce8293-2ec1-9c58-ee2b-d7f253f03032" testName="Stock.Tests.ProductTermTests.OnlyRequestedFieldsHaveSuggestions(field: &quot;Unit&quot;)" computerName="LAPTOP-HQMKD56I" duration="00:00:00.0380151" startTime="2026-10-07T01:10:37.0593636+08:00" endTime="2026-10-07T01:10:37.0966628+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="a45040f0-49c1-49dd-ad69-9693de05a952" />
+    <UnitTestResult executionId="3a9d2f61-dc04-4764-bd79-e767788ad018" testId="6d52ac93-4734-6105-ac18-efaa3e49b85c" testName="Stock.Tests.ProductTermTests.KeywordsMatchWholeFieldAndRankExactThenPrefix" computerName="LAPTOP-HQMKD56I" duration="00:00:00.1112977" startTime="2026-10-07T01:10:38.2019822+08:00" endTime="2026-10-07T01:10:38.3132185+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="3a9d2f61-dc04-4764-bd79-e767788ad018" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="Stock.Tests.ProductTermTests.OnlyRequestedFieldsHaveSuggestions(field: &quot;Unit&quot;)" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\release\net10.0\stock.tests.dll" id="32ce8293-2ec1-9c58-ee2b-d7f253f03032">
+      <Execution id="a45040f0-49c1-49dd-ad69-9693de05a952" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Release\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.ProductTermTests" name="OnlyRequestedFieldsHaveSuggestions" />
+    </UnitTest>
+    <UnitTest name="Stock.Tests.ProductTermTests.OnlyRequestedFieldsHaveSuggestions(field: &quot;Name;DROP TABLE Product&quot;)" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\release\net10.0\stock.tests.dll" id="ccd8c81e-1eba-863b-d81b-62b05409e6a2">
+      <Execution id="4a45ac2d-b928-4ed7-b163-f9d18ab7f3d8" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Release\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.ProductTermTests" name="OnlyRequestedFieldsHaveSuggestions" />
+    </UnitTest>
+    <UnitTest name="Stock.Tests.ProductTermTests.SqlAndWildcardCharactersAreLiteralSearchText" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\release\net10.0\stock.tests.dll" id="12fe3fb9-ea71-e8b2-1452-f415de311600">
+      <Execution id="3f6af409-5123-4823-825b-b271676e9512" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Release\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.ProductTermTests" name="SqlAndWildcardCharactersAreLiteralSearchText" />
+    </UnitTest>
+    <UnitTest name="Stock.Tests.ProductTermTests.OnlyRequestedFieldsHaveSuggestions(field: &quot;MaterialCode&quot;)" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\release\net10.0\stock.tests.dll" id="58ff9ea9-73a6-083c-baff-1bcbb60233bd">
+      <Execution id="33d5be2b-2492-41bc-8f1b-1b30f5c4264d" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Release\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.ProductTermTests" name="OnlyRequestedFieldsHaveSuggestions" />
+    </UnitTest>
+    <UnitTest name="Stock.Tests.ProductTermTests.SuggestionsDoNotCreateProductsOrChangeStockAndAllowNewNames" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\release\net10.0\stock.tests.dll" id="59ae8fb2-f491-a6b7-3ae5-568924faa25f">
+      <Execution id="292a1e6e-8f5e-4d46-9bb9-a9bdfdb141c8" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Release\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.ProductTermTests" name="SuggestionsDoNotCreateProductsOrChangeStockAndAllowNewNames" />
+    </UnitTest>
+    <UnitTest name="Stock.Tests.ProductTermTests.EmptyColorShowsDistinctNonemptyTerms" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\release\net10.0\stock.tests.dll" id="5ccf7333-4867-e550-e476-7cf9f00388b4">
+      <Execution id="d3e78f57-6e66-4324-bf27-3ac069334ddd" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Release\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.ProductTermTests" name="EmptyColorShowsDistinctNonemptyTerms" />
+    </UnitTest>
+    <UnitTest name="Stock.Tests.ProductTermTests.SpecsKeepFullMultilineValueAndIgnoreEmptyValues" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\release\net10.0\stock.tests.dll" id="6037c33d-66b3-7453-583f-5898267c7b45">
+      <Execution id="3bb78e47-9d59-485a-b172-e06c9cbde7d7" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Release\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.ProductTermTests" name="SpecsKeepFullMultilineValueAndIgnoreEmptyValues" />
+    </UnitTest>
+    <UnitTest name="Stock.Tests.ProductTermTests.ResultLimitIsDeterministicAndNewTermsBecomeAvailable" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\release\net10.0\stock.tests.dll" id="6692d60d-da8c-34b7-3cb1-140b21e97a1f">
+      <Execution id="0b1ab506-2047-4bd4-a942-0da0e7b82f40" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Release\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.ProductTermTests" name="ResultLimitIsDeterministicAndNewTermsBecomeAvailable" />
+    </UnitTest>
+    <UnitTest name="Stock.Tests.ProductTermTests.CancelledSearchDoesNotReturnResults" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\release\net10.0\stock.tests.dll" id="d0a1b145-d6e2-536c-5e68-ea0756ba8d50">
+      <Execution id="55f31f02-44e7-4fae-ab01-246af583035d" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Release\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.ProductTermTests" name="CancelledSearchDoesNotReturnResults" />
+    </UnitTest>
+    <UnitTest name="Stock.Tests.ProductTermTests.KeywordsMatchWholeFieldAndRankExactThenPrefix" storage="d:\workspace\codex工作区\local-stock-manager\tests\stock.tests\bin\release\net10.0\stock.tests.dll" id="6d52ac93-4734-6105-ac18-efaa3e49b85c">
+      <Execution id="3a9d2f61-dc04-4764-bd79-e767788ad018" />
+      <TestMethod codeBase="D:\workspace\codex工作区\local-stock-manager\tests\Stock.Tests\bin\Release\net10.0\Stock.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Stock.Tests.ProductTermTests" name="KeywordsMatchWholeFieldAndRankExactThenPrefix" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="6692d60d-da8c-34b7-3cb1-140b21e97a1f" executionId="0b1ab506-2047-4bd4-a942-0da0e7b82f40" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="12fe3fb9-ea71-e8b2-1452-f415de311600" executionId="3f6af409-5123-4823-825b-b271676e9512" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="58ff9ea9-73a6-083c-baff-1bcbb60233bd" executionId="33d5be2b-2492-41bc-8f1b-1b30f5c4264d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="5ccf7333-4867-e550-e476-7cf9f00388b4" executionId="d3e78f57-6e66-4324-bf27-3ac069334ddd" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="d0a1b145-d6e2-536c-5e68-ea0756ba8d50" executionId="55f31f02-44e7-4fae-ab01-246af583035d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="6037c33d-66b3-7453-583f-5898267c7b45" executionId="3bb78e47-9d59-485a-b172-e06c9cbde7d7" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ccd8c81e-1eba-863b-d81b-62b05409e6a2" executionId="4a45ac2d-b928-4ed7-b163-f9d18ab7f3d8" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="59ae8fb2-f491-a6b7-3ae5-568924faa25f" executionId="292a1e6e-8f5e-4d46-9bb9-a9bdfdb141c8" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="32ce8293-2ec1-9c58-ee2b-d7f253f03032" executionId="a45040f0-49c1-49dd-ad69-9693de05a952" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="6d52ac93-4734-6105-ac18-efaa3e49b85c" executionId="3a9d2f61-dc04-4764-bd79-e767788ad018" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="列表中未列出的结果" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="所有已加载的结果" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="10" executed="10" passed="10" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.0+00ab0a9ec4 (64-bit .NET 10.0.11)&#xD;
+[xUnit.net 00:00:00.22]   Discovering: Stock.Tests&#xD;
+[xUnit.net 00:00:00.29]   Discovered:  Stock.Tests&#xD;
+[xUnit.net 00:00:00.31]   Starting:    Stock.Tests&#xD;
+[xUnit.net 00:00:01.81]   Finished:    Stock.Tests&#xD;
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>

@@ -10,12 +10,14 @@ namespace Stock.Desktop;
 
 public static class Ui
 {
+    internal static Action<Exception>? AutomatedTestError { get; set; }
     public static Button Button(string label, Action action, bool primary=false)
     { var b=new Button{Content=label};if(primary)b.Style=(Style)Application.Current.FindResource("Primary"); b.Click+=(_,_)=>Try(action);return b; }
     public static void Try(Action action) { try { action(); } catch(Exception ex) { Error(ex); } }
     public static async Task TryAsync(Func<Task> action) { try { await action(); } catch(Exception ex) { Error(ex); } }
     public static void Error(Exception ex)
     {
+        if(AutomatedTestError is not null){AutomatedTestError(ex);return;}
         var message=ex is BusinessException?ex.Message:ex is IOException or UnauthorizedAccessException?"无法完成操作，请检查文件是否被占用、目录权限和磁盘空间。\n"+ex.Message:"操作未完成，请重试。\n"+ex.Message;
         MessageBox.Show(message,"操作未完成",MessageBoxButton.OK,MessageBoxImage.Warning);
     }

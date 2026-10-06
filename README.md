@@ -1,14 +1,15 @@
-# 本地库存管理 1.1.2
+# 本地库存管理 1.1.3
 
 Windows 11 x64、WPF / .NET 10、SQLite。库存本机保存；照片识别使用阿里云百炼 `qwen3.5-ocr`，只上传用户确认的表格截图。手工业务与本机离线备用识别可断网使用。
 
-功能升级依据见 [升级计划](docs/升级计划-v1.1.md)，本次修复见 [1.1.2 发布说明](docs/发布说明-v1.1.2.md)，操作说明见 [使用说明](docs/使用说明.md)，验证结果和未验证边界见 [验收报告](docs/验收报告.md) 与 [已知限制](docs/已知限制.md)。安装包、SHA-256、说明书及报告在本机 `dist` 目录，也可从 [GitHub 1.1.2 发布页](https://github.com/traveller1974/Personal-Local-Offline-Storage-System/releases/tag/local-stock-manager-v1.1.2) 下载。
+功能升级依据见 [升级计划](docs/升级计划-v1.1.md)，本版变更见 [1.1.3 发布说明](docs/发布说明-v1.1.3.md)，操作说明见 [使用说明](docs/使用说明.md)，验证结果和未验证边界见 [验收报告](docs/验收报告.md) 与 [已知限制](docs/已知限制.md)。1.1.3安装包、SHA-256、说明书及报告在本机 `dist` 目录。历史1.1.2见 [GitHub发布页](https://github.com/traveller1974/Personal-Local-Offline-Storage-System/releases/tag/local-stock-manager-v1.1.2)。
 
 安装包只更新程序目录，保留已有数据库、照片、密钥设置和备份；安装前请关闭软件。首次启动会先完整备份，再迁移数据库，库存余额及已有单据内容保留；三年历史保留规则继续按升级计划执行。
 
 ## 主要功能
 
 - 类型、名称、完整规格、颜色、物料编码共同区分库存。标识随单保存。
+- 名称、规格、颜色输入关键词即可选择已有词条，留空可展开候选，也可保留新值；手工进货单可直接新建零库存货品。
 - 多张照片与重复货品保留独立原行，库存及作废按货品合计校验。
 - 本机检测表格、四角调整、透视校正、截图确认、云端识别、逐行核对和最终入库。
 - 框选裁剪先预览、再应用或取消；显示最新处理图并保持比例。识别缺字段时保留待核对行，实发列标志兼容明确的布尔字符串；无法确认时保留明细并阻止加入清单。
@@ -20,15 +21,21 @@ API Key 在软件设置中填写，由 Windows 当前用户加密保存，不进
 
 ## 开发与验证
 
-SDK 版本在 `global.json`，NuGet 和本机备用 OCR 依赖均锁定。为精简目录，本地开发工具、虚拟环境及构建缓存已清理；首次重新构建使用 `-Bootstrap` 恢复 `tools`、`ocr/.venv`。软件使用不需要开发环境。
+千问图像识别新增了独立单文件 EXE：`dist/Stock.RecognitionLab.exe`，使用说明及确认后升级方式见 [千问识别独立测试](docs/千问识别独立测试.md)。运行 `scripts/build_recognition_lab.ps1 -SmokeTest` 可构建和离线验证，再用 `scripts/start_recognition_lab.ps1` 启动真实样单测试。该程序不连接库存数据库。
+
+用户已确认识图模块可用，1.1.3升级包内置并启用被确认的同一份识图EXE，保留旧识别实现；进货识别弹窗采用40%／60%布局并显示全部字段。用户继续按原进货步骤操作。本地构建的源码开关仍默认使用旧后台，交付升级包明确使用 `-UseEmbeddedRecognition`。本机实际安装需由用户关闭软件后运行升级包更新。
+
+SDK 版本在 `global.json`，NuGet 和本机备用 OCR 依赖均锁定。本轮打包已恢复本地工具与构建缓存；新环境首次构建使用 `-Bootstrap` 恢复 `tools`、`ocr/.venv`。软件使用不需要开发环境。
 
 ```powershell
-.\scripts\build.ps1 -Bootstrap
-.\scripts\build.ps1 -SkipOcrBuild
-.\scripts\verify.ps1 -OutputDirectory artifacts/v1.1.2/desktop-smoke
+.\scripts\build_recognition_lab.ps1 -SmokeTest
+.\scripts\verify_recognition_integration.ps1
+.\scripts\build.ps1 -Bootstrap -UseEmbeddedRecognition -AppVersion 1.1.3
+.\scripts\build.ps1 -SkipOcrBuild -UseEmbeddedRecognition -AppVersion 1.1.3
+.\scripts\verify.ps1 -ApplicationPath artifacts/publish-1.1.3-true/LocalStockManager.exe -OutputDirectory artifacts/v1.1.3/desktop-smoke
 ```
 
-正常构建运行核心回归、20万行 SQL/汇总/分页/导出与取消测试、本机 OCR 样本及错误协议，生成自包含发布、NSIS 安装包和 SHA-256。`-SkipOcrBuild` 只复用未变更的已测试本机 OCR 工作程序。
+正常构建运行核心回归、20万行 SQL/汇总/分页/导出与取消测试、本机 OCR 样本及错误协议和识图模块接入验证，生成自包含发布、NSIS 安装包和 SHA-256。`-SkipOcrBuild` 只复用未变更的已测试本机 OCR 工作程序。默认构建保留旧识别后台；只有真实测试经用户确认后的升级构建增加 `-UseEmbeddedRecognition`，并使用已测试的 `dist/Stock.RecognitionLab.exe`。
 
 ```powershell
 dotnet test tests/Stock.Tests/Stock.Tests.csproj -c Release --filter 'Category=Performance'
@@ -36,7 +43,7 @@ dotnet test tests/Stock.Tests/Stock.Tests.csproj -c Release --filter 'Category=P
 dotnet run --project tests/Stock.DesktopHarness/Stock.DesktopHarness.csproj -c Release -- (Get-Location).Path
 ```
 
-安装升级测试用独立注册表、快捷方式、安装目录和测试数据。`install_upgrade_test.ps1` 覆盖 v1→当前版迁移，须保留 `artifacts/v1.1/v1-test-setup.exe`；新克隆需先构建隔离的 v1 基准包。`install_patch_test.ps1 -BaselinePublish <v1.1.1自包含发布目录> -BaselineVersion 1.1.1 -TargetVersion 1.1.2` 覆盖 v1.1.1→v1.1.2 的安装、重复安装与卸载，逐文件比较数据库、照片、DPAPI 设置及保护备份的 SHA-256。测试不改变真实安装，当前与历史精简证据保存在 `docs/验证证据/v1.1.2`、`docs/验证证据/v1.1.1` 和 `docs/验证证据/v1.1`。
+安装升级测试用独立注册表、快捷方式、安装目录和测试数据。`install_upgrade_test.ps1` 覆盖 v1迁移，须保留 `artifacts/v1.1/v1-test-setup.exe`；新克隆需先构建隔离的 v1 基准包。1.1.3使用 `install_patch_test.ps1 -BaselinePublish artifacts/v1.1.3/publish-baseline-1.1.2 -BaselineVersion 1.1.2 -TargetVersion 1.1.3 -TargetPublish artifacts/publish-1.1.3-true -EmbeddedRecognition` 覆盖安装、重复安装、卸载及已安装的识图后台，逐文件比较数据库、照片、DPAPI设置与备份的SHA-256。内置后台测试使用较短的测试目录，避免Windows子进程工作目录长度限制。失败测试仅在明确指定 `-CleanupPreviousTest` 且验证注册路径、项目目录与安装标识一致时清理。当前精简证据在 `docs/验证证据/v1.1.3`，历史证据继续保留。
 
 人工样单基准在 `docs/样单人工基准.json`，`null` 代表模糊完整字段待人工确认。开发者可用 `scripts/evaluate_samples.py` 比较本地保存的识别结果，不会自动上传或读取密钥。模拟接口测试不能代替真实样单验收。
 

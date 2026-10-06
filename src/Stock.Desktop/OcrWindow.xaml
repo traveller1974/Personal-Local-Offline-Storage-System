@@ -1,18 +1,64 @@
-<Window x:Class="Stock.Desktop.OcrWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:q="clr-namespace:Stock.Desktop.Controls" Style="{StaticResource {x:Type Window}}" Title="货单照片识别与核对" Width="1240" Height="840" MinWidth="1040" MinHeight="680" WindowStartupLocation="CenterOwner" AllowDrop="True" Drop="Dropped" DragOver="Dragged">
- <DockPanel Margin="22">
-  <StackPanel x:Name="Toolbar" DockPanel.Dock="Top"><TextBlock Text="确认表格范围 → 联网识别 → 逐行核对" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,12"/><WrapPanel Margin="0,0,0,10"><Button Content="选择照片" Click="Choose"/><Button Content="摄像头拍照" Click="Camera"/><Button Content="向左旋转" Click="RotateLeft"/><Button Content="向右旋转" Click="RotateRight"/><Button Content="检测表格" Click="AutoTable"/><Button Content="调整四角" Click="SelectCorners"/><Button Content="应用四角" Click="ApplyCorners"/><Button Content="框选裁剪" Click="EnableCrop"/><Button Content="恢复原图" Click="Reset"/></WrapPanel><WrapPanel Margin="0,0,0,12"><CheckBox x:Name="UploadConfirm" Content="已确认截图仅含表头、明细和分区合计，允许上传百炼"/><CheckBox x:Name="Offline" Content="使用本机离线备用识别" Margin="18,0"/><TextBlock Text="缩放" VerticalAlignment="Center"/><Slider x:Name="Zoom" Minimum="0.1" Maximum="2.5" Value="0.5" Width="130" ValueChanged="Zoomed"/></WrapPanel></StackPanel>
-  <StackPanel DockPanel.Dock="Bottom" Margin="0,14,0,0"><TextBlock x:Name="StatusText" Text="选择或拖入一张JPG / PNG照片，先在本机裁剪并确认范围。" TextWrapping="Wrap" Margin="0,0,0,12"/><WrapPanel HorizontalAlignment="Right"><Button x:Name="RecognizeButton" Content="识别确认的截图" Style="{StaticResource Primary}" Click="Recognize"/><Button x:Name="CancelOcrButton" Content="取消识别" Click="CancelOcr" Visibility="Collapsed"/><Button Content="关闭" Click="CloseWindow"/><Button x:Name="AddRowsButton" Content="加入进货清单" Click="AddRows"/></WrapPanel></StackPanel>
-  <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="530"/></Grid.ColumnDefinitions>
+<Window x:Class="Stock.Desktop.OcrWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:q="clr-namespace:Stock.Desktop.Controls"
+ Style="{StaticResource {x:Type Window}}" Title="货单照片识别与核对" Width="1360" Height="900" MinWidth="1040" MinHeight="680" WindowStartupLocation="CenterOwner" AllowDrop="True" Drop="Dropped" DragOver="Dragged">
+ <Window.Resources>
+  <Style x:Key="FieldLabel" TargetType="TextBlock"><Setter Property="Foreground" Value="#688276"/><Setter Property="Margin" Value="0,0,0,4"/><Setter Property="TextWrapping" Value="Wrap"/></Style>
+  <Style x:Key="FieldValue" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}"><Setter Property="TextWrapping" Value="Wrap"/><Setter Property="HorizontalScrollBarVisibility" Value="Disabled"/></Style>
+  <Style x:Key="OriginalValue" TargetType="TextBox" BasedOn="{StaticResource FieldValue}"><Setter Property="IsReadOnly" Value="True"/><Setter Property="Background" Value="#F3F7F5"/></Style>
+ </Window.Resources>
+ <DockPanel x:Name="Root" Margin="22">
+  <StackPanel x:Name="Toolbar" DockPanel.Dock="Top">
+   <TextBlock Text="确认表格范围 → 联网识别 → 逐行核对" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,12"/>
+   <WrapPanel Margin="0,0,0,10"><Button Content="选择照片" Click="Choose"/><Button Content="摄像头拍照" Click="Camera"/><Button Content="向左旋转" Click="RotateLeft"/><Button Content="向右旋转" Click="RotateRight"/><Button Content="检测表格" Click="AutoTable"/><Button Content="调整四角" Click="SelectCorners"/><Button Content="应用四角" Click="ApplyCorners"/><Button Content="框选裁剪" Click="EnableCrop"/><Button Content="恢复原图" Click="Reset"/></WrapPanel>
+   <WrapPanel Margin="0,0,0,12"><CheckBox x:Name="UploadConfirm" Content="已确认截图仅含表头、明细和分区合计，允许上传百炼"/><CheckBox x:Name="Offline" Content="使用本机离线备用识别" Margin="18,0"/><TextBlock Text="缩放" VerticalAlignment="Center"/><Slider x:Name="Zoom" Minimum="0.1" Maximum="2.5" Value="0.5" Width="130" ValueChanged="Zoomed"/></WrapPanel>
+  </StackPanel>
+  <StackPanel DockPanel.Dock="Bottom" Margin="0,14,0,0">
+   <ScrollViewer MaxHeight="70" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,0,0,12"><TextBlock x:Name="StatusText" Text="选择或拖入一张JPG / PNG照片，先在本机裁剪并确认范围。" TextWrapping="Wrap"/></ScrollViewer>
+   <WrapPanel HorizontalAlignment="Right"><Button x:Name="RecognizeButton" Content="识别确认的截图" Style="{StaticResource Primary}" Click="Recognize"/><Button x:Name="CancelOcrButton" Content="取消识别" Click="CancelOcr" Visibility="Collapsed"/><Button Content="关闭" Click="CloseWindow"/><Button x:Name="AddRowsButton" Content="加入进货清单" Click="AddRows"/></WrapPanel>
+  </StackPanel>
+  <Grid x:Name="ContentGrid"><Grid.ColumnDefinitions><ColumnDefinition Width="4*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="6*"/></Grid.ColumnDefinitions>
    <Border Background="#E5ECE8" CornerRadius="6"><ScrollViewer x:Name="ImageScroller" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"><Grid x:Name="ImageHost" HorizontalAlignment="Left" VerticalAlignment="Top" MouseLeftButtonDown="CropStart" MouseMove="CropMove" MouseLeftButtonUp="CropEnd" LostMouseCapture="CropCaptureLost"><Image x:Name="PhotoImage" Stretch="Uniform"/><Canvas x:Name="Overlay" IsHitTestVisible="False"><Polygon x:Name="CornerOutline" Stroke="#E58B34" StrokeThickness="3" Fill="#20E58B34" Visibility="Collapsed"/><Rectangle x:Name="Selection" Stroke="#E58B34" StrokeThickness="2" Fill="#30E58B34" Visibility="Collapsed"/><Rectangle x:Name="RowHighlight" Stroke="#087F73" StrokeThickness="3" Fill="#20087F73" Visibility="Collapsed"/></Canvas></Grid></ScrollViewer></Border>
-   <DockPanel x:Name="ReviewPanel" Grid.Column="2"><StackPanel DockPanel.Dock="Top"><TextBlock Text="按原行序核对，重复货品分别保存" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,10"/><ComboBox x:Name="ColumnPicker" DisplayMemberPath="Label" SelectionChanged="ColumnChanged" Margin="0,0,0,12" ToolTip="离线备用数量列，请只选实发列"/><TextBox x:Name="TotalOverride" ToolTip="原单合计有误时，明确核对并填写原因" Margin="0,0,0,12"/><TextBlock Text="合计有误时在上框填写核对原因。类型和原单位必须一致。" TextWrapping="Wrap" Margin="0,0,0,8"/></StackPanel>
-    <ScrollViewer VerticalScrollBarVisibility="Auto"><ItemsControl ItemsSource="{Binding Rows}"><ItemsControl.ItemTemplate><DataTemplate><Border Background="White" BorderBrush="#D5E2DE" BorderThickness="1" CornerRadius="6" Padding="14" Margin="0,0,0,12"><StackPanel>
-     <WrapPanel><TextBox Text="{Binding Name,UpdateSourceTrigger=PropertyChanged}" Width="270" Margin="0,0,8,8" ToolTip="识别的货品名称"/><TextBox Text="{Binding Spec,UpdateSourceTrigger=PropertyChanged}" Width="185" Margin="0,0,0,8" ToolTip="识别的规格"/></WrapPanel>
-     <WrapPanel Margin="0,0,0,8"><TextBox Text="{Binding Color,UpdateSourceTrigger=PropertyChanged}" Width="170" ToolTip="颜色（电池、充电器必须为空）"/><TextBlock Text="实发：" VerticalAlignment="Center"/><q:QuantityBox Minimum="0" Value="{Binding Quantity,UpdateSourceTrigger=PropertyChanged}" Width="170"/><TextBlock Text="{Binding Unit}" VerticalAlignment="Center" Margin="8,0"/><TextBox Text="{Binding Marker,UpdateSourceTrigger=PropertyChanged}" Width="65" ToolTip="标识"/></WrapPanel>
-     <WrapPanel Margin="0,0,0,10"><ComboBox ItemsSource="{Binding TypeChoices}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding Type}" Width="115"/><TextBox Text="{Binding MaterialCode,UpdateSourceTrigger=PropertyChanged}" Width="155" ToolTip="物料编码"/><TextBox Text="{Binding RawUnit,UpdateSourceTrigger=PropertyChanged}" Width="65" ToolTip="原单位 PC / PAA / Z1"/><Button Content="文字定位（另次调用）" Tag="{Binding}" Click="Locate" Padding="8,5"/></WrapPanel>
-     <TextBlock Text="关联货品（类型＋名称＋规格＋颜色＋物料编码）" Margin="0,0,0,6" Foreground="#688276"/><ComboBox ItemsSource="{Binding Products}" SelectedItem="{Binding Product}" DisplayMemberPath="Display" IsEditable="True" IsTextSearchEnabled="True" Margin="0,0,0,10"/>
-     <TextBlock Text="{Binding Warning}" Foreground="#A95A15" TextWrapping="Wrap" Margin="0,0,0,10"/>
-     <WrapPanel><CheckBox Content="已核对此行" IsChecked="{Binding Reviewed}" IsEnabled="{Binding CanReview}" Margin="0,0,12,0"/><Button Content="搜索关联货品" Tag="{Binding}" Click="Associate" Padding="10,5"/><Button Content="新建货品" Tag="{Binding}" Click="NewProduct" Padding="10,5"/><Button Content="移除此行" Tag="{Binding}" Click="RemoveRow" Padding="10,5"/></WrapPanel>
-    </StackPanel></Border></DataTemplate></ItemsControl.ItemTemplate></ItemsControl></ScrollViewer>
+   <DockPanel x:Name="ReviewPanel" Grid.Column="2">
+    <StackPanel DockPanel.Dock="Top">
+     <TextBlock Text="按原行序核对，重复货品分别保存" FontSize="18" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,8"/>
+     <ScrollViewer MaxHeight="130" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,0,0,8"><StackPanel>
+      <TextBlock x:Name="ResultSummaryText" Text="识别后在这里查看实发列状态和分区合计。" TextWrapping="Wrap"/>
+      <ItemsControl x:Name="SectionTotalsList" Margin="0,6,0,0"><ItemsControl.ItemTemplate><DataTemplate><TextBlock Text="{Binding}" TextWrapping="Wrap" Margin="0,2"/></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+      <TextBlock x:Name="ResultWarningsText" TextWrapping="Wrap" Foreground="#A95A15" Margin="0,6,0,0"/>
+     </StackPanel></ScrollViewer>
+     <ComboBox x:Name="ColumnPicker" DisplayMemberPath="Label" SelectionChanged="ColumnChanged" Margin="0,0,0,8" ToolTip="离线备用数量列，请只选实发列"/>
+     <TextBlock Text="原单合计有误时填写核对原因" Style="{StaticResource FieldLabel}"/>
+     <TextBox x:Name="TotalOverride" TextWrapping="Wrap" ToolTip="原单合计有误时，明确核对并填写原因" Margin="0,0,0,8"/>
+    </StackPanel>
+    <ScrollViewer x:Name="ReviewScroller" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+     <ItemsControl x:Name="ReviewRows" ItemsSource="{Binding Rows}"><ItemsControl.ItemTemplate><DataTemplate>
+      <Border Background="White" BorderBrush="#D5E2DE" BorderThickness="1" CornerRadius="6" Padding="14" Margin="0,0,0,12"><StackPanel>
+       <Grid Margin="0,0,0,8"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="10"/><ColumnDefinition Width="*"/><ColumnDefinition Width="10"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+        <StackPanel><TextBlock Text="原序号" Style="{StaticResource FieldLabel}"/><TextBox Text="{Binding OriginalOrder,Mode=OneWay}" Style="{StaticResource OriginalValue}"/></StackPanel>
+        <StackPanel Grid.Column="2"><TextBlock Text="标识" Style="{StaticResource FieldLabel}"/><TextBox Text="{Binding Marker,UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FieldValue}"/></StackPanel>
+        <StackPanel Grid.Column="4"><TextBlock Text="原单位 PC / PAA / Z1" Style="{StaticResource FieldLabel}"/><TextBox Text="{Binding RawUnit,UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FieldValue}"/></StackPanel>
+       </Grid>
+       <TextBlock Text="原始名称（含括号编码）" Style="{StaticResource FieldLabel}"/><TextBox Text="{Binding RawName,Mode=OneWay}" Style="{StaticResource OriginalValue}" Margin="0,0,0,8"/>
+       <Grid Margin="0,0,0,8"><Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition Width="10"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+        <StackPanel><TextBlock Text="货品名称" Style="{StaticResource FieldLabel}"/><q:ProductTermBox Text="{Binding Name,UpdateSourceTrigger=PropertyChanged}" TermField="Name" Service="{Binding Stock,RelativeSource={RelativeSource AncestorType={x:Type Window}}}" TermSelected="TermPicked"/></StackPanel>
+        <StackPanel Grid.Column="2"><TextBlock Text="物料编码" Style="{StaticResource FieldLabel}"/><TextBox Text="{Binding MaterialCode,UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FieldValue}"/></StackPanel>
+       </Grid>
+       <TextBlock Text="完整规格" Style="{StaticResource FieldLabel}"/><q:ProductTermBox Text="{Binding Spec,UpdateSourceTrigger=PropertyChanged}" TermField="Spec" MaxLength="500" Service="{Binding Stock,RelativeSource={RelativeSource AncestorType={x:Type Window}}}" AcceptsReturn="True" TermSelected="TermPicked" Margin="0,0,0,8"/>
+       <Grid Margin="0,0,0,8"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="10"/><ColumnDefinition Width="*"/><ColumnDefinition Width="10"/><ColumnDefinition Width="2*"/></Grid.ColumnDefinitions>
+        <StackPanel><TextBlock Text="颜色" Style="{StaticResource FieldLabel}"/><q:ProductTermBox Text="{Binding Color,UpdateSourceTrigger=PropertyChanged}" TermField="Color" Service="{Binding Stock,RelativeSource={RelativeSource AncestorType={x:Type Window}}}" TermSelected="TermPicked" ToolTip="电池、充电器必须为空"/></StackPanel>
+        <StackPanel Grid.Column="2"><TextBlock Text="货品类型" Style="{StaticResource FieldLabel}"/><ComboBox ItemsSource="{Binding TypeChoices}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding Type}"/></StackPanel>
+        <StackPanel Grid.Column="4"><TextBlock Text="核对后的实发数量" Style="{StaticResource FieldLabel}"/><DockPanel><TextBlock Text="{Binding Unit}" DockPanel.Dock="Right" VerticalAlignment="Center" Margin="8,0,0,0"/><q:QuantityBox Minimum="0" Value="{Binding Quantity,UpdateSourceTrigger=PropertyChanged}"/></DockPanel></StackPanel>
+       </Grid>
+       <Grid Margin="0,0,0,8"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="10"/><ColumnDefinition Width="2*"/></Grid.ColumnDefinitions>
+        <StackPanel><TextBlock Text="原始实发数量" Style="{StaticResource FieldLabel}"/><TextBox Text="{Binding RawQuantity,Mode=OneWay}" Style="{StaticResource OriginalValue}"/></StackPanel>
+        <StackPanel Grid.Column="2"><TextBlock Text="分区依据原文" Style="{StaticResource FieldLabel}"/><TextBox Text="{Binding SectionEvidence,Mode=OneWay}" Style="{StaticResource OriginalValue}"/></StackPanel>
+       </Grid>
+       <TextBlock Text="识别疑点" Style="{StaticResource FieldLabel}"/><TextBox Text="{Binding RecognitionIssues,Mode=OneWay}" Style="{StaticResource OriginalValue}" Margin="0,0,0,10"/>
+       <TextBlock Text="关联货品（类型＋名称＋规格＋颜色＋物料编码）" Style="{StaticResource FieldLabel}"/><ComboBox ItemsSource="{Binding Products}" SelectedItem="{Binding Product}" DisplayMemberPath="Display" IsEditable="True" IsTextSearchEnabled="True" Margin="0,0,0,10"/>
+       <TextBlock Text="{Binding Warning}" Foreground="#A95A15" TextWrapping="Wrap" Margin="0,0,0,10"/>
+       <WrapPanel><CheckBox Content="已核对此行" IsChecked="{Binding Reviewed}" IsEnabled="{Binding CanReview}" Margin="0,0,12,8"/><Button Content="搜索关联货品" Tag="{Binding}" Click="Associate" Padding="10,5" Margin="0,0,8,8"/><Button Content="新建货品" Tag="{Binding}" Click="NewProduct" Padding="10,5" Margin="0,0,8,8"/><Button Content="移除此行" Tag="{Binding}" Click="RemoveRow" Padding="10,5" Margin="0,0,8,8"/><Button Content="文字定位（另次调用）" Tag="{Binding}" Click="Locate" Padding="8,5" Margin="0,0,8,8"/></WrapPanel>
+      </StackPanel></Border>
+     </DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+    </ScrollViewer>
    </DockPanel>
   </Grid>
  </DockPanel>
