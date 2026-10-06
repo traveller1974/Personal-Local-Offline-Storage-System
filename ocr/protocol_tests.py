@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-import tempfile
+import uuid
 import unittest
 import worker
 from PIL import Image
@@ -10,8 +10,10 @@ class ProtocolTests(unittest.TestCase):
     def setUp(self):
         test_root = Path(__file__).resolve().parents[1] / 'artifacts/ocr-protocol'
         test_root.mkdir(parents=True, exist_ok=True)
-        self.temp = tempfile.TemporaryDirectory(prefix='stock-ocr-protocol-', dir=test_root)
-        self.root = Path(self.temp.name)
+        # Inherit workspace ACLs. Windows sandbox tokens cannot access the
+        # owner-only directories created by TemporaryDirectory(mode=0700).
+        self.root = test_root / ('stock-ocr-protocol-' + uuid.uuid4().hex)
+        self.root.mkdir()
         self.photo = self.root / '照片.png'
         Image.new('RGB', (32, 32), 'white').save(self.photo)
         self.original_root = worker.MODEL_ROOT
@@ -21,7 +23,7 @@ class ProtocolTests(unittest.TestCase):
     def tearDown(self):
         worker.MODEL_ROOT = self.original_root
         worker._engine = self.original_engine
-        self.temp.cleanup()
+        # Retain test-owned artifacts for inspection and normal workspace cleanup.
 
     def request(self):
         return {'protocolVersion': 1, 'requestId': 'test', 'imagePath': str(self.photo)}

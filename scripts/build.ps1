@@ -10,9 +10,9 @@ if($Bootstrap){ & (Join-Path $PSScriptRoot 'bootstrap.ps1') -DownloadProxy $Down
 $python=Join-Path $projectRoot 'ocr/.venv/Scripts/python.exe'
 $nsis=Join-Path $projectRoot 'tools/nsis/nsis-3.11/makensis.exe'
 foreach($tool in @($python,$nsis)){if(-not(Test-Path -LiteralPath $tool)){throw "Missing build tool: $tool. Run build.ps1 -Bootstrap first."}}
-& dotnet restore LocalStockManager.slnx --locked-mode -p:NuGetAudit=false
+& dotnet restore LocalStockManager.slnx --locked-mode -p:NuGetAudit=false --disable-parallel -m:1 -nodeReuse:false
 if($LASTEXITCODE -ne 0){throw 'Locked NuGet restore failed'}
-& dotnet test tests/Stock.Tests/Stock.Tests.csproj --no-restore -c Release --logger 'trx;LogFileName=core.trx' --results-directory artifacts/tests
+& dotnet test tests/Stock.Tests/Stock.Tests.csproj --no-restore -c Release -m:1 -nodeReuse:false --logger 'trx;LogFileName=core.trx' --results-directory artifacts/tests
 if($LASTEXITCODE -ne 0){throw 'Business tests failed'}
 & $python ocr/smoke_test.py
 if($LASTEXITCODE -ne 0){throw 'Source OCR tests failed'}
@@ -22,8 +22,8 @@ if(-not $SkipOcrBuild){ & $python -m PyInstaller --noconfirm ocr/worker.spec --d
 if($LASTEXITCODE -ne 0){throw 'OCR worker packaging failed'}
 & $python ocr/smoke_test.py --worker artifacts/ocr-worker/StockOcr/StockOcr.exe
 if($LASTEXITCODE -ne 0){throw 'Bundled OCR tests failed'}
-$publish=Join-Path $projectRoot 'artifacts/publish-v1.1'
-& dotnet publish src/Stock.Desktop/Stock.Desktop.csproj -c Release --no-restore -r win-x64 --self-contained true -o $publish -p:PublishReadyToRun=false
+$publish=Join-Path $projectRoot 'artifacts/publish-v1.1.1'
+& dotnet publish src/Stock.Desktop/Stock.Desktop.csproj -c Release --no-restore -m:1 -nodeReuse:false -r win-x64 --self-contained true -o $publish -p:PublishReadyToRun=false
 if($LASTEXITCODE -ne 0){throw 'Desktop publish failed'}
 New-Item -ItemType Directory -Force -Path (Join-Path $publish 'Ocr'),(Join-Path $publish 'Samples') | Out-Null
 Copy-Item -Path artifacts/ocr-worker/StockOcr/* -Destination (Join-Path $publish 'Ocr') -Recurse -Force
@@ -41,8 +41,8 @@ if($LASTEXITCODE -ne 0){throw 'License collection failed'}
 Copy-Item -LiteralPath docs/使用说明.md,docs/已知限制.md,THIRD-PARTY-NOTICES.md -Destination $publish -Force
 Copy-Item -LiteralPath licenses -Destination $publish -Recurse -Force
 New-Item -ItemType Directory -Force dist | Out-Null
-$installer=Join-Path $projectRoot 'dist/LocalStockManager-1.1.0-win-x64-Setup.exe'
-& $nsis '/INPUTCHARSET' 'UTF8' "/DPUBLISH_DIR=$publish" "/DOUTPUT_FILE=$installer" '/DAPP_VERSION=1.1.0' installer/installer.nsi
+$installer=Join-Path $projectRoot 'dist/LocalStockManager-1.1.1-win-x64-Setup.exe'
+& $nsis '/INPUTCHARSET' 'UTF8' "/DPUBLISH_DIR=$publish" "/DOUTPUT_FILE=$installer" '/DAPP_VERSION=1.1.1' installer/installer.nsi
 if($LASTEXITCODE -ne 0){throw 'NSIS compilation failed'}
 $hash=(Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash.ToLowerInvariant()
 Set-Content -LiteralPath ($installer+'.sha256') -Encoding ascii -Value "$hash  $([IO.Path]::GetFileName($installer))"

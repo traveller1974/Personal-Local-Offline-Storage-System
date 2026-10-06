@@ -32,8 +32,18 @@ public sealed class ImageSession : IDisposable
     {if(image is null)return;Compose(clockwise?[0,-1,Height-1,1,0,0,0,0,1]:[0,1,0,-1,0,Width-1,0,0,1]);var next=new Mat();Cv2.Rotate(image,next,clockwise?RotateFlags.Rotate90Clockwise:RotateFlags.Rotate90Counterclockwise);image.Dispose();image=next;Save();}
     public void Crop(int left,int top,int width,int height)
     {
-        if(image is null||width<5||height<5||left<0||top<0||left+width>Width||top+height>Height)throw new BusinessException("裁剪范围无效，请在照片内框选。");
-        using var region=new Mat(image,new Rect(left,top,width,height));var next=region.Clone();Compose([1,0,-left,0,1,-top,0,0,1]);image.Dispose();image=next;Save();
+        ValidateCrop(left,top,width,height);
+        using var region=new Mat(image!,new Rect(left,top,width,height));var next=region.Clone();Compose([1,0,-left,0,1,-top,0,0,1]);image!.Dispose();image=next;Save();
+    }
+    public byte[] PreviewCrop(Rect rectangle)
+    {
+        ValidateCrop(rectangle.X,rectangle.Y,rectangle.Width,rectangle.Height);
+        using var region=new Mat(image!,rectangle);Cv2.ImEncode(".png",region,out var bytes);return bytes;
+    }
+    private void ValidateCrop(int left,int top,int width,int height)
+    {
+        if(image is null||width<5||height<5||left<0||top<0||(long)left+width>Width||(long)top+height>Height)
+            throw new BusinessException("裁剪范围无效，请在照片内框选至少5×5像素的区域。");
     }
     public void Reset() {if(image is null)return;image.Dispose();image=Cv2.ImDecode(File.ReadAllBytes(OriginalPath),ImreadModes.Color);transform=[1,0,0,0,1,0,0,0,1];Save();}
     private void Compose(double[] next)

@@ -14,11 +14,11 @@ if(Test-Path -LiteralPath $registry){throw 'An earlier test registration exists;
 $realRegistration=Get-ItemProperty -LiteralPath 'HKCU:\Software\LocalStockManager' -ErrorAction SilentlyContinue
 $realInstallPath=$realRegistration.InstallPath
 $nsis=Join-Path $projectRoot 'tools/nsis/nsis-3.11/makensis.exe'
-$v2publish=Join-Path $projectRoot 'artifacts/publish-v1.1'
+$v2publish=Join-Path $projectRoot 'artifacts/publish-v1.1.1'
 $v1setup=Join-Path $projectRoot 'artifacts/v1.1/v1-test-setup.exe'
 $v2setup=Join-Path $testRoot 'v1.1-test-setup.exe'
 if(-not(Test-Path -LiteralPath $v1setup)){throw 'Preserve and package v1 publish before this test'}
-& $nsis '/INPUTCHARSET' 'UTF8' '/XSetCompressor /FINAL /SOLID zlib' "/DPUBLISH_DIR=$v2publish" "/DOUTPUT_FILE=$v2setup" '/DAPP_VERSION=1.1.0' "/DAPP_ID=$testId" '/DSHORTCUT_LABEL=本地库存管理安装测试' (Join-Path $projectRoot 'installer/installer.nsi')
+& $nsis '/INPUTCHARSET' 'UTF8' '/XSetCompressor /FINAL /SOLID zlib' "/DPUBLISH_DIR=$v2publish" "/DOUTPUT_FILE=$v2setup" '/DAPP_VERSION=1.1.1' "/DAPP_ID=$testId" '/DSHORTCUT_LABEL=本地库存管理安装测试' (Join-Path $projectRoot 'installer/installer.nsi')
 if($LASTEXITCODE -ne 0){throw 'Isolated v1.1 installer build failed'}
 $checks=[Collections.Generic.List[string]]::new()
 function Assert-Test([bool]$value,[string]$label){if(-not $value){throw $label};$checks.Add($label)}

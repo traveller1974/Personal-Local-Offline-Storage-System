@@ -1,0 +1,13 @@
+{
+  "originalWidth": 200,
+  "fileWidth": 80,
+  "displayWidth": 200,
+  "displayHeight": 120,
+  "displayTopLeftBgr": [
+    0,
+    0,
+    255
+  ],
+  "staleBitmapReproduced": true,
+  "displayMatchesCrop": false
+}

@@ -13,6 +13,7 @@ internal static class Program
     [STAThread]
     private static int Main(string[] args)
     {
+        if(args.Length==2&&args[0]=="--bitmap-probe")return BitmapProbe.Run(Path.GetFullPath(args[1]));
         var repo=Path.GetFullPath(args[0]);var output=Path.Combine(repo,"artifacts","v1.1","ui-performance");Directory.CreateDirectory(output);
         var app=new Application{ShutdownMode=ShutdownMode.OnExplicitShutdown};
         // Load styles into a plain Application; never run Stock.Desktop.App's real-data startup.

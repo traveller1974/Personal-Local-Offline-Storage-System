@@ -46,6 +46,8 @@ public sealed class QwenRecognitionService : IRecognitionService
         保留完整规格内电压、容量、尺寸、型号、标点、换行和颜色文字；模糊或缺失字段置空并说明，不猜填。
         type由分区和名称判断，PC可为成车或充电器，PAA对应电池，Z1对应附件。单元格颜色文字原样输出，由本机校验。
         sectionTotals只取各分区明确标注的实发合计，缺失为null。数量为零的货品仍保留。
+        顶层与每条rows明细都输出上述全部字段。文字字段缺失用空字符串，issues和warnings无内容用空数组，分区合计缺失用null。
+        rawQuantity使用字符串保存原文，不以0代替空白；actualQuantityColumn只能为true或false。不要输出额外字段或重复JSON键。
         """;
     private async Task<(JsonDocument Document,TimeSpan Elapsed)> Request(string path,bool locate,CancellationToken token)
     {
@@ -127,20 +129,49 @@ public static class RecognitionParser
 {
     public static RecognitionResult Parse(string text)
     {
-        text=text.Trim();if(text.StartsWith("```json\n",StringComparison.Ordinal)||text.StartsWith("```\n",StringComparison.Ordinal))
-        {if(!text.EndsWith("```",StringComparison.Ordinal))throw new BusinessException("JSON 代码围栏未闭合。");text=text[(text.IndexOf('\n')+1)..^3].Trim();}
+        text=text.Trim();
+        if(text.StartsWith("```",StringComparison.Ordinal))
+        {
+            var newline=text.IndexOf('\n');
+            if(newline<0||!text.EndsWith("```",StringComparison.Ordinal))throw Error("$","JSON 代码围栏未闭合");
+            var language=text[3..newline].Trim();
+            if(language.Length>0&&!language.Equals("json",StringComparison.OrdinalIgnoreCase))throw Error("$","代码围栏必须为 JSON");
+            text=text[(newline+1)..^3].Trim();
+        }
         try
         {
             using var doc=JsonDocument.Parse(text,new JsonDocumentOptions{MaxDepth=16});var root=doc.RootElement;
-            Require(root,"actualQuantityColumn","rows","sectionTotals","warnings");
-            var actual=root.GetProperty("actualQuantityColumn").GetBoolean();var rows=new List<RecognizedRow>();
-            foreach(var row in root.GetProperty("rows").EnumerateArray())
+            CheckDuplicates(root,"$");
+            var warnings=new List<string>();
+            Object(root,"$",warnings,"actualQuantityColumn","rows","sectionTotals","warnings");
+            var actual=false;
+            if(!root.TryGetProperty("actualQuantityColumn",out var column)||column.ValueKind==JsonValueKind.Null)
+                warnings.Add("actualQuantityColumn 缺失，实发列尚未确认。");
+            else if(column.ValueKind is JsonValueKind.True or JsonValueKind.False)actual=column.GetBoolean();
+            else throw Error("actualQuantityColumn","必须为布尔值");
+            if(!root.TryGetProperty("rows",out var rowArray))throw Error("rows","字段缺失");
+            if(rowArray.ValueKind!=JsonValueKind.Array)throw Error("rows","必须为明细数组");
+            if(rowArray.GetArrayLength() is 0 or >1000)throw Error("rows","明细数量必须为1至1000行");
+            var rows=new List<RecognizedRow>();var rowIndex=0;
+            foreach(var row in rowArray.EnumerateArray())
             {
-                Require(row,"originalOrder","rawName","name","materialCode","spec","color","type","sectionEvidence","rawQuantity","rawUnit","marker","issues");
-                string S(string key){var e=row.GetProperty(key);if(e.ValueKind==JsonValueKind.Null)return "";var value=e.GetString()??"";if(value.Length>2000)throw new BusinessException("识别字段过长。");return value;}
-                var typeText=S("type");if(!Enum.TryParse<ProductType>(typeText,false,out var type)||!Enum.IsDefined(type)||typeText!=type.ToString())throw new BusinessException("识别货物类型无效。");
-                var issues=Strings(row.GetProperty("issues")).ToList();var raw=S("rawQuantity").Trim();
-                if(raw.Length>0&&!Quantity(raw,out _))throw new BusinessException("实发数量不是有效的非负整数。");
+                var path=$"rows[{rowIndex++}]";var issues=new List<string>();
+                Object(row,path,issues,"originalOrder","rawName","name","materialCode","spec","color","type","sectionEvidence","rawQuantity","rawUnit","marker","issues");
+                issues.AddRange(Strings(row,"issues",path+".issues"));
+                string S(string key,bool scalar=false)
+                {
+                    if(!row.TryGetProperty(key,out var e)||e.ValueKind==JsonValueKind.Null){issues.Add($"{key} 缺失，请人工核对");return "";}
+                    var value=e.ValueKind==JsonValueKind.String?e.GetString()!:
+                        scalar&&e.ValueKind is JsonValueKind.Number or JsonValueKind.True or JsonValueKind.False?e.GetRawText():
+                        throw Error(path+"."+key,"字段类型无效，必须为文字");
+                    if(value.Length>2000)throw Error(path+"."+key,"字段超过2000字符");
+                    return value;
+                }
+                var typeText=S("type");
+                if(!Enum.TryParse<ProductType>(typeText,false,out var type)||!Enum.IsDefined(type)||typeText!=type.ToString())
+                {type=ProductType.Unknown;issues.Add("货物类型不明，请人工确认");}
+                var raw=S("rawQuantity",true).Trim();
+                if(!Quantity(raw,out _))issues.Add("实发数量缺失或不是有效的非负整数，请人工修正");
                 var name=S("name");var original=S("rawName");var code=S("materialCode");
                 var suffix=Regex.Match(original,@"^(?<name>.+)[（(](?<code>[0-9]+)[）)]\s*$",RegexOptions.Singleline);
                 if(suffix.Success)
@@ -154,18 +185,59 @@ public static class RecognitionParser
                 if(sectionTypes.Count>1||sectionTypes.Count==1&&sectionTypes[0]!=type)issues.Add("分区依据与货物类型冲突，必须人工确认");
                 if(evidence.Length==0)issues.Add("分区依据缺失，必须核对类型");
                 if(name.Length==0||raw.Length==0)issues.Add("必填名称或实发数量不清楚");
-                rows.Add(new(S("originalOrder"),original,name,code,S("spec"),color,type,evidence,raw,unit,S("marker"),issues));
+                var order=S("originalOrder",true);
+                if(row.TryGetProperty("originalOrder",out var orderValue)&&orderValue.ValueKind is not(JsonValueKind.String or JsonValueKind.Null)&&
+                   (orderValue.ValueKind!=JsonValueKind.Number||!long.TryParse(order,NumberStyles.None,CultureInfo.InvariantCulture,out _)))
+                    throw Error(path+".originalOrder","必须为文字或非负整数序号");
+                rows.Add(new(order,original,name,code,S("spec"),color,type,evidence,raw,unit,S("marker"),issues.Distinct().ToList()));
             }
-            if(rows.Count is 0 or >1000)throw new BusinessException("识别明细数量无效。");
-            var totals=new Dictionary<ProductType,long?>();var t=root.GetProperty("sectionTotals");Require(t,"Vehicle","Battery","Charger","Accessory");
+            var totals=new Dictionary<ProductType,long?>();
+            var hasTotals=root.TryGetProperty("sectionTotals",out var t)&&t.ValueKind!=JsonValueKind.Null;
+            if(hasTotals)Object(t,"sectionTotals",warnings,"Vehicle","Battery","Charger","Accessory");
             foreach(var type in new[]{ProductType.Vehicle,ProductType.Battery,ProductType.Charger,ProductType.Accessory})
-            {var value=t.GetProperty(type.ToString());if(value.ValueKind==JsonValueKind.Null)totals[type]=null;else{var n=value.GetInt64();Rules.Quantity(n,true);totals[type]=n;}}
-            var warnings=Strings(root.GetProperty("warnings")).ToList();if(!actual)warnings.Add("未识别到实发列，不能加入进货清单。");return new(rows,totals,warnings,actual);
+            {
+                totals[type]=null;
+                if(!hasTotals||!t.TryGetProperty(type.ToString(),out var value)||value.ValueKind==JsonValueKind.Null)continue;
+                var raw=value.ValueKind==JsonValueKind.String?value.GetString()!:value.ValueKind==JsonValueKind.Number?value.GetRawText():"";
+                if(Quantity(raw,out var n))totals[type]=n;
+                else warnings.Add($"sectionTotals.{type} 无效，已标记为未知，请人工核对");
+            }
+            if(!hasTotals)warnings.Add("分区合计未返回，请对照原图人工核对。");
+            warnings.AddRange(Strings(root,"warnings","warnings"));
+            if(!actual)warnings.Add("未确认实发列，不能加入进货清单；请重新识别或手动录入。");
+            return new(rows,totals,warnings.Distinct().ToList(),actual);
         }
-        catch(Exception ex) when(ex is JsonException or InvalidOperationException or KeyNotFoundException or FormatException or OverflowException){throw new BusinessException("识别 JSON 结构无效或截断，未加入进货清单。");}
+        catch(JsonException){throw Error("$","JSON 无效、嵌套过深或输出截断");}
     }
     public static bool Quantity(string text,out long value)=>long.TryParse(text,NumberStyles.None,CultureInfo.InvariantCulture,out value)&&value is >=0 and <=Rules.MaxQuantity;
-    private static IReadOnlyList<string> Strings(JsonElement array)=>array.EnumerateArray().Select(e=>e.GetString()??throw new BusinessException("核对说明必须为文字。")).ToList();
-    private static void Require(JsonElement obj,params string[] keys)
-    {if(obj.ValueKind!=JsonValueKind.Object)throw new BusinessException("识别 JSON 必须是对象。");var names=obj.EnumerateObject().Select(p=>p.Name).ToList();if(names.Count!=keys.Length||names.Distinct().Count()!=names.Count||keys.Any(k=>!names.Contains(k)))throw new BusinessException("识别 JSON 字段缺失、重复或多余。");}
+    private static BusinessException Error(string path,string reason)=>new($"识别 JSON {path}：{reason}。未加入进货清单。");
+    private static IReadOnlyList<string> Strings(JsonElement obj,string key,string path)
+    {
+        if(!obj.TryGetProperty(key,out var array)||array.ValueKind==JsonValueKind.Null)return [];
+        if(array.ValueKind!=JsonValueKind.Array)throw Error(path,"必须为文字数组");
+        var strings=new List<string>();var index=0;
+        foreach(var item in array.EnumerateArray())
+        {if(item.ValueKind!=JsonValueKind.String)throw Error($"{path}[{index}]","核对说明必须为文字");var value=item.GetString()!;if(value.Length>2000)throw Error($"{path}[{index}]","核对说明超过2000字符");strings.Add(value);index++;}
+        return strings;
+    }
+    private static void Object(JsonElement obj,string path,List<string> notes,params string[] keys)
+    {
+        if(obj.ValueKind!=JsonValueKind.Object)throw Error(path,"必须为对象");
+        if(obj.EnumerateObject().Any(p=>!keys.Contains(p.Name,StringComparer.Ordinal)))notes.Add($"{path} 含额外字段，已忽略，请人工核对");
+    }
+    private static void CheckDuplicates(JsonElement element,string path)
+    {
+        if(element.ValueKind==JsonValueKind.Object)
+        {
+            var names=new HashSet<string>(StringComparer.Ordinal);
+            foreach(var property in element.EnumerateObject())
+            {
+                if(!names.Add(property.Name))throw Error(path,"存在重复字段");
+                // Only fixed schema names enter diagnostics; arbitrary returned text stays private.
+                var known=new[]{"rows","actualQuantityColumn","sectionTotals","warnings","originalOrder","rawName","name","materialCode","spec","color","type","sectionEvidence","rawQuantity","rawUnit","marker","issues","Vehicle","Battery","Charger","Accessory"};
+                CheckDuplicates(property.Value,path+"."+(known.Contains(property.Name,StringComparer.Ordinal)?property.Name:"额外字段"));
+            }
+        }
+        else if(element.ValueKind==JsonValueKind.Array){var i=0;foreach(var item in element.EnumerateArray())CheckDuplicates(item,$"{path}[{i++}]");}
+    }
 }

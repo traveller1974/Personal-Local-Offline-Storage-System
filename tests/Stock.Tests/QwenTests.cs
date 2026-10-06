@@ -32,15 +32,15 @@ public sealed class QwenTests : IDisposable
     {
         var source=Sample().ToJsonString();var result=RecognitionParser.Parse("```json\n"+source+"\n```");Assert.Equal(3,result.Rows.Count);Assert.Equal("123",result.Rows[0].MaterialCode);Assert.Equal("车",result.Rows[0].Name);Assert.Equal("0",result.Rows[2].RawQuantity);Assert.Contains("\n",result.Rows[2].Spec);Assert.Empty(result.Rows[2].Color);Assert.Equal(ProductType.Charger,result.Rows[2].Type);
     }
-    [Theory] [InlineData("1.5")] [InlineData("-1")] [InlineData("1e3")] [InlineData("2147483648")] public void InvalidQuantityCannotBeRepaired(string quantity)
-    {var sample=Sample();sample["rows"]![0]!["rawQuantity"]=quantity;Assert.Throws<BusinessException>(()=>RecognitionParser.Parse(sample.ToJsonString()));}
+    [Theory] [InlineData("1.5")] [InlineData("-1")] [InlineData("1e3")] [InlineData("2147483648")] public void InvalidQuantityIsRetainedForManualCorrection(string quantity)
+    {var sample=Sample();sample["rows"]![0]!["rawQuantity"]=quantity;var result=RecognitionParser.Parse(sample.ToJsonString());Assert.Equal(quantity,result.Rows[0].RawQuantity);Assert.False(RecognitionParser.Quantity(result.Rows[0].RawQuantity,out _));Assert.Contains(result.Rows[0].Issues,i=>i.Contains("实发数量"));Assert.Equal(3,result.Rows.Count);}
     [Theory] [InlineData("{}")] [InlineData("{\"rows\":[]}")] [InlineData("```json\n{}")] [InlineData("{\"actualQuantityColumn\":true,")] [InlineData("note {}")]
     public void MalformedOrTruncatedJsonIsRejected(string text)=>Assert.Throws<BusinessException>(()=>RecognitionParser.Parse(text));
     [Fact] public void MissingActualColumnUnknownTypeAndColorConflictAreVisible()
     {
         var sample=Sample();sample["actualQuantityColumn"]=false;sample["rows"]![2]!["color"]="白";sample["rows"]![0]!["type"]="Unknown";var result=RecognitionParser.Parse(sample.ToJsonString());Assert.False(result.ActualQuantityColumn);Assert.NotEmpty(result.Warnings);Assert.NotEmpty(result.Rows[0].Issues);Assert.NotEmpty(result.Rows[2].Issues);
         sample["rows"]![0]!["type"]="Charger";Assert.Contains(RecognitionParser.Parse(sample.ToJsonString()).Rows[0].Issues,i=>i.Contains("分区依据"));
-        sample["rows"]![0]!["type"]="Anything";Assert.Throws<BusinessException>(()=>RecognitionParser.Parse(sample.ToJsonString()));
+        sample["rows"]![0]!["type"]="Anything";Assert.Equal(ProductType.Unknown,RecognitionParser.Parse(sample.ToJsonString()).Rows[0].Type);
     }
     [Fact] public async Task NativeRequestContainsOnlyConfirmedImageAndPromptAndRecordsUsage()
     {

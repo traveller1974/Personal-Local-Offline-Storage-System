@@ -32,7 +32,12 @@ public static class Ui
     }
     public static BitmapImage Bitmap(string path)
     {
-        var image=new BitmapImage();image.BeginInit();image.CacheOption=BitmapCacheOption.OnLoad;image.UriSource=new Uri(Path.GetFullPath(path));image.EndInit();image.Freeze();return image;
+        return Bitmap(File.ReadAllBytes(path));
+    }
+    public static BitmapImage Bitmap(byte[] bytes)
+    {
+        using var stream=new MemoryStream(bytes,false);
+        var image=new BitmapImage();image.BeginInit();image.CacheOption=BitmapCacheOption.OnLoad;image.StreamSource=stream;image.EndInit();image.Freeze();return image;
     }
     public static void Photo(Window owner,string path)
     { var w=Dialog(owner,"货单照片",1000,760);w.Content=new ScrollViewer{Content=new Image{Source=Bitmap(path),Stretch=Stretch.Uniform},HorizontalScrollBarVisibility=ScrollBarVisibility.Auto,VerticalScrollBarVisibility=ScrollBarVisibility.Auto};w.ShowDialog(); }
