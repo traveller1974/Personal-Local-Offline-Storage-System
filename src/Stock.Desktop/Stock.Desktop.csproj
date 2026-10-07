@@ -8,6 +8,8 @@
     <RecognitionWorkerExe>$(MSBuildThisFileDirectory)../../artifacts/recognition-lab/single-file/Stock.RecognitionLab.exe</RecognitionWorkerExe>
   </PropertyGroup>
   <ItemGroup>
+    <Page Include="../SharedUi/UiResources.xaml" Link="Themes/UiResources.xaml" />
+    <Compile Include="../SharedUi/Presentation.cs" Link="Presentation.cs" />
     <Compile Include="../Stock.RecognitionLab/DetailImagePreparation.cs" Link="DetailImagePreparation.cs" />
     <ProjectReference Include="../Stock.Core/Stock.Core.csproj" />
     <ProjectReference Include="../Stock.Recognition/Stock.Recognition.csproj" />

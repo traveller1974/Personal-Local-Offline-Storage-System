@@ -5,6 +5,7 @@ using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Stock.Core;
+using PresentationHelpers = Stock.Presentation.Presentation;
 
 namespace Stock.Desktop;
 
@@ -12,7 +13,13 @@ public static class Ui
 {
     internal static Action<Exception>? AutomatedTestError { get; set; }
     public static Button Button(string label, Action action, bool primary=false)
-    { var b=new Button{Content=label};if(primary)b.Style=(Style)Application.Current.FindResource("Primary"); b.Click+=(_,_)=>Try(action);return b; }
+    {
+        var b=new Button{Content=label,HorizontalAlignment=HorizontalAlignment.Left};if(primary)b.Style=(Style)Application.Current.FindResource("Primary");
+        var icon=label.Contains("搜索")?"SearchIcon":label.Contains("导出")||label.Contains("备份")?"ExportIcon":label.Contains("照片")||label.Contains("图片")?"PhotoIcon":label.StartsWith("新建")||label.StartsWith("新增")?"PlusIcon":null;
+        if(icon is not null)PresentationHelpers.SetIcon(b,(Geometry)Application.Current.FindResource(icon));
+        if(label.Contains("作废"))b.Style=(Style)Application.Current.FindResource("Danger");
+        b.Click+=(_,_)=>Try(action);return b;
+    }
     public static void Try(Action action) { try { action(); } catch(Exception ex) { Error(ex); } }
     public static async Task TryAsync(Func<Task> action) { try { await action(); } catch(Exception ex) { Error(ex); } }
     public static void Error(Exception ex)
@@ -22,14 +29,25 @@ public static class Ui
         MessageBox.Show(message,"操作未完成",MessageBoxButton.OK,MessageBoxImage.Warning);
     }
     public static TextBlock Text(string text,bool title=false) => new(){Text=text,TextWrapping=TextWrapping.Wrap,Margin=new(0,0,0,14),FontSize=title?22:14,FontWeight=title?FontWeights.SemiBold:FontWeights.Normal};
-    public static StackPanel Row(params UIElement[] items) { var p=new StackPanel{Orientation=Orientation.Horizontal,Margin=new(0,0,0,12)};foreach(var item in items)p.Children.Add(item);return p; }
+    public static WrapPanel Row(params UIElement[] items) { var p=new WrapPanel{Margin=new(0,0,0,12)};foreach(var item in items)p.Children.Add(item);return p; }
     public static void Field(Panel p,string label,FrameworkElement input) { p.Children.Add(new TextBlock{Text=label,Margin=new(0,6,0,6)});input.Margin=new(0,0,0,10);p.Children.Add(input); }
     public static Window Dialog(Window owner,string title,double width=620,double height=650)
         => new(){Owner=owner,Title=title,Width=width,Height=height,MinWidth=Math.Min(width,550),MinHeight=Math.Min(height,420),WindowStartupLocation=WindowStartupLocation.CenterOwner};
     public static DataGrid Table(object items,params (string Label,string Path,double Width)[] columns)
     {
         var g=new DataGrid{ItemsSource=items as System.Collections.IEnumerable};
-        foreach(var (label,path,width) in columns)g.Columns.Add(new DataGridTextColumn{Header=label,Binding=new Binding(path),Width=width<=0?new DataGridLength(1,DataGridLengthUnitType.Star):new(width)});
+        foreach(var (label,path,width) in columns)
+        {
+            var field=path.Split('.').Last();
+            var column=new DataGridTextColumn{Header=label,Binding=new Binding(path),Width=width<=0?new DataGridLength(1,DataGridLengthUnitType.Star):new(width),MinWidth=width<=0?120:width,ElementStyle=(Style)Application.Current.FindResource("CellText")};
+            if(field=="Spec"){column.Width=new(3,DataGridLengthUnitType.Star);column.MinWidth=240;}
+            else if(field=="Name"){column.Width=new(1,DataGridLengthUnitType.Star);column.MinWidth=110;column.MaxWidth=180;}
+            else if(field is "Color" or "ColorText"){column.Width=new(1.5,DataGridLengthUnitType.Star);column.MinWidth=140;}
+            else if(field is "TypeText" or "Unit" or "Kind" or "KindText" or "Channel" or "Status")column.ElementStyle=(Style)Application.Current.FindResource("CellCentered");
+            else if(field.Contains("Quantity")||field.StartsWith("Warehouse")||field.StartsWith("Store")||field.StartsWith("Total"))
+            {column.ElementStyle=(Style)Application.Current.FindResource("CellNumber");column.MinWidth=Math.Max(72,width);column.Width=DataGridLength.SizeToCells;}
+            g.Columns.Add(column);
+        }
         return g;
     }
     public static BitmapImage Bitmap(string path)
@@ -46,7 +64,7 @@ public static class Ui
     public static bool Confirm(Window owner,string title,string description,IReadOnlyList<StockImpact> impacts,Func<Task<string>> commit,out string? result)
     {
         string? saved=null;var w=Dialog(owner,title,1000,560);var dock=new DockPanel{Margin=new(24)};
-        var text=Text(description);DockPanel.SetDock(text,Dock.Top);dock.Children.Add(text);
+        var text=new ScrollViewer{Content=Text(description),MaxHeight=120,VerticalScrollBarVisibility=ScrollBarVisibility.Auto,HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled};DockPanel.SetDock(text,Dock.Top);dock.Children.Add(text);
         var notice=Text("确认前请核对每种货品的规格、数量与库存变化。");DockPanel.SetDock(notice,Dock.Top);dock.Children.Add(notice);
         var actions=new StackPanel{Orientation=Orientation.Horizontal,HorizontalAlignment=HorizontalAlignment.Right,Margin=new(0,18,0,0)};
         var back=Button("返回编辑",()=>w.DialogResult=false);var save=new Button{Content=title,Style=(Style)Application.Current.FindResource("Primary")};actions.Children.Add(back);actions.Children.Add(save);DockPanel.SetDock(actions,Dock.Bottom);dock.Children.Add(actions);

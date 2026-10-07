@@ -8,6 +8,7 @@ internal sealed class ProductChoiceWindow : Window
 {
     internal ProductChoiceWindow(Window owner, OcrReviewRow row, Product selected)
     {
+        Style=(Style)Application.Current.FindResource(typeof(Window));
         Owner = owner; Title = "确认使用已有货品的资料"; Width = 650; Height = 620;
         MinWidth = 550; MinHeight = 420; WindowStartupLocation = WindowStartupLocation.CenterOwner;
         var root = new DockPanel { Margin = new(24) };

@@ -26,6 +26,7 @@ public sealed record RecordRow(DocumentRecord Document)
 }
 public sealed class MainViewModel : Observable
 {
+    public string AppVersion => "v" + (typeof(MainViewModel).Assembly.GetName().Version?.ToString(3) ?? "1.3.0") + " · 库存保存在本机";
     public StockService Service { get; }
     public ObservableCollection<Product> Products { get; } = [];
     public ObservableCollection<RecordRow> Records { get; } = [];

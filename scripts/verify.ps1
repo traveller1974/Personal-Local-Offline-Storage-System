@@ -1,7 +1,7 @@
 param([string]$ApplicationPath='',[string]$OutputDirectory='',[switch]$RecognitionIntegration)
 $ErrorActionPreference='Stop'
 $projectRoot=Split-Path $PSScriptRoot -Parent
-if(-not $ApplicationPath){$ApplicationPath=Join-Path $projectRoot 'artifacts/publish-1.2.1-true/LocalStockManager.exe'}
+if(-not $ApplicationPath){$ApplicationPath=Join-Path $projectRoot 'artifacts/publish-1.3.0-true/LocalStockManager.exe'}
 if(-not $OutputDirectory){$OutputDirectory=Join-Path $projectRoot 'artifacts/desktop-smoke'}
 if(-not(Test-Path -LiteralPath $ApplicationPath)){throw 'Build the self-contained app first.'}
 $process=Start-Process -FilePath $ApplicationPath -ArgumentList '--smoke-test',('"'+[IO.Path]::GetFullPath($OutputDirectory)+'"') -WorkingDirectory $projectRoot -WindowStyle Hidden -PassThru -Wait

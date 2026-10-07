@@ -3,11 +3,11 @@
  <Grid x:Name="Root" Margin="20">
   <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
   <Grid Margin="0,0,0,12"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-   <StackPanel><TextBlock Text="货单图像识别测试" FontSize="26" FontWeight="SemiBold"/><TextBlock Text="选择千问或 DeepSeek，对照照片检查结果。" Foreground="#59766E" Margin="0,4,0,0"/></StackPanel>
-   <Border Grid.Column="1" Background="#DFEEE8" CornerRadius="5" Padding="12,8" VerticalAlignment="Center"><TextBlock Text="独立测试 · 不连接库存" Foreground="#087F73"/></Border>
+   <StackPanel><TextBlock Text="货单图像识别测试" FontSize="26" FontWeight="SemiBold"/><TextBlock Text="选择千问或 DeepSeek，对照照片检查结果。" Foreground="{StaticResource Muted}" Margin="0,4,0,0"/></StackPanel>
+   <Border Grid.Column="1" Background="{StaticResource SelectedSurface}" CornerRadius="8" Padding="12,8" VerticalAlignment="Center"><TextBlock Text="独立测试 · 不连接库存" Foreground="{StaticResource Accent}"/></Border>
   </Grid>
   <Expander x:Name="ConnectionSettings" Grid.Row="1" Header="识别服务设置（仅本次会话使用）" IsExpanded="True" Margin="0,0,0,12">
-   <Border Background="White" Padding="12" BorderBrush="#D5E2DE" BorderThickness="1"><Grid>
+   <Border Background="White" Padding="12" BorderBrush="{StaticResource Line}" BorderThickness="1"><Grid>
     <Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition Width="16"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
     <StackPanel><TextBlock Text="API Key" Margin="0,0,0,4"/><PasswordBox x:Name="ApiKeyBox"/></StackPanel>
@@ -22,8 +22,8 @@
   <Grid x:Name="ContentGrid" Grid.Row="3" SizeChanged="ContentAreaChanged">
    <Grid.ColumnDefinitions><ColumnDefinition Width="4*"/><ColumnDefinition Width="14"/><ColumnDefinition Width="6*"/></Grid.ColumnDefinitions>
    <Grid x:Name="ImagePanel"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-    <TextBlock x:Name="ImageCaption" Text="选择或拖入一张图片，框选表格后测试。" TextWrapping="Wrap" Margin="0,0,0,8" Foreground="#59766E"/>
-    <Border Grid.Row="1" Background="#E4ECE7" CornerRadius="6"><ScrollViewer x:Name="ImageScroller" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" SizeChanged="ImageAreaChanged">
+    <TextBlock x:Name="ImageCaption" Text="选择或拖入一张图片，框选表格后测试。" TextWrapping="Wrap" Margin="0,0,0,8" Foreground="{StaticResource Muted}"/>
+    <Border Grid.Row="1" Background="{StaticResource ImageBackground}" CornerRadius="10"><ScrollViewer x:Name="ImageScroller" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" SizeChanged="ImageAreaChanged">
      <Grid x:Name="ImageHost" HorizontalAlignment="Left" VerticalAlignment="Top" Background="Transparent" MouseLeftButtonDown="CropStart" MouseMove="CropMove" MouseLeftButtonUp="CropEnd" LostMouseCapture="CropCaptureLost">
       <Image x:Name="PhotoImage" Stretch="Fill"/><Canvas IsHitTestVisible="False"><Rectangle x:Name="Selection" Stroke="#E58B34" StrokeThickness="2" Fill="#35E58B34" Visibility="Collapsed"/></Canvas>
      </Grid>
@@ -34,14 +34,14 @@
      <ScrollViewer x:Name="SummaryScroller" MaxHeight="145" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,0,0,8"><StackPanel>
       <TextBlock x:Name="ResultSummary" Text="识别后会显示全部行级字段和单据合计。" TextWrapping="Wrap" FontWeight="SemiBold"/>
       <ItemsControl x:Name="TotalsList" Margin="0,8,0,0"><ItemsControl.ItemTemplate><DataTemplate><TextBlock Text="{Binding}" TextWrapping="Wrap" Margin="0,2"/></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
-      <TextBlock x:Name="WarningsText" TextWrapping="Wrap" Foreground="#A45D16" Margin="0,8,0,0"/>
+      <TextBlock x:Name="WarningsText" TextWrapping="Wrap" Foreground="{StaticResource Warning}" Margin="0,8,0,0"/>
      </StackPanel></ScrollViewer>
      <ListBox x:Name="RowsList" Grid.Row="1" ItemsSource="{Binding Rows}" BorderThickness="0" Background="Transparent" HorizontalContentAlignment="Stretch"
       ScrollViewer.HorizontalScrollBarVisibility="Disabled" VirtualizingStackPanel.IsVirtualizing="True" VirtualizingStackPanel.VirtualizationMode="Recycling" VirtualizingPanel.ScrollUnit="Pixel">
-      <ListBox.ItemTemplate><DataTemplate><Border Background="White" BorderBrush="#D5E2DE" BorderThickness="1" CornerRadius="5" Padding="12" Margin="0,0,0,10"><StackPanel>
+      <ListBox.ItemTemplate><DataTemplate><Border Background="White" BorderBrush="{StaticResource Line}" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,10"><StackPanel>
        <TextBlock Text="{Binding Header}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8"/>
        <ItemsControl ItemsSource="{Binding Fields}"><ItemsControl.ItemTemplate><DataTemplate><Grid Margin="0,2"><Grid.ColumnDefinitions><ColumnDefinition Width="112"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-        <TextBlock Text="{Binding Label}" Foreground="#59766E" VerticalAlignment="Top" Margin="0,3,8,0"/><TextBox Grid.Column="1" Text="{Binding Value}" Style="{StaticResource ReadOnlyValue}"/>
+        <TextBlock Text="{Binding Label}" Foreground="{StaticResource Muted}" VerticalAlignment="Top" Margin="0,3,8,0"/><TextBox Grid.Column="1" Text="{Binding Value}" Style="{StaticResource ReadOnlyValue}"/>
        </Grid></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
       </StackPanel></Border></DataTemplate></ListBox.ItemTemplate>
      </ListBox>
@@ -53,11 +53,11 @@
     </TabControl></TabItem>
     <TabItem Header="样单对比与意见"><ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><StackPanel Margin="12">
      <TextBlock x:Name="ComparisonSummary" Text="选中对应样单后，会将识别结果与人工基准逐字段比较。" TextWrapping="Wrap" FontWeight="SemiBold" Margin="0,0,0,8"/>
-     <TextBlock x:Name="PendingText" TextWrapping="Wrap" Foreground="#A45D16" Margin="0,0,0,12"/>
+     <TextBlock x:Name="PendingText" TextWrapping="Wrap" Foreground="{StaticResource Warning}" Margin="0,0,0,12"/>
      <TextBlock Text="人工核对意见（与识别值分开保存）" FontWeight="SemiBold" Margin="0,0,0,6"/>
      <ComboBox x:Name="ReviewDecision" SelectedIndex="0" Margin="0,0,0,8"><ComboBoxItem Content="待核对"/><ComboBoxItem Content="需要修正后重测"/><ComboBoxItem Content="本次结果已人工核对通过"/></ComboBox>
      <TextBox x:Name="ReviewNotes" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="80" VerticalScrollBarVisibility="Auto" Margin="0,0,0,12"/>
-     <ItemsControl x:Name="DifferenceList"><ItemsControl.ItemTemplate><DataTemplate><Border BorderBrush="#E5D9C8" BorderThickness="1" Padding="10" Margin="0,0,0,8"><StackPanel>
+     <ItemsControl x:Name="DifferenceList"><ItemsControl.ItemTemplate><DataTemplate><Border BorderBrush="{StaticResource Line}" BorderThickness="1" Padding="10" Margin="0,0,0,8"><StackPanel>
       <TextBlock Text="{Binding Heading}" FontWeight="SemiBold" TextWrapping="Wrap"/><TextBlock Text="{Binding Detail}" TextWrapping="Wrap" Margin="0,6,0,0"/>
      </StackPanel></Border></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
     </StackPanel></ScrollViewer></TabItem>

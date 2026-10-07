@@ -46,19 +46,19 @@ public static class StockDialogs
     }
     public static string? Transfer(Window owner,StockService service,Product product)
     {
-        string? saved=null;var w=Ui.Dialog(owner,"调整库存分布",690,530);var p=new StackPanel{Margin=new(26)};
-        p.Children.Add(Ui.Text(product.Display,true));var direction=new ComboBox{ItemsSource=new[]{"仓库→店面","店面→仓库"},SelectedIndex=0};var quantity=new QuantityBox();Ui.Field(p,"调拨方向",direction);Ui.Field(p,"调拨数量",quantity);var impactText=Ui.Text("");p.Children.Add(impactText);
+        string? saved=null;var w=Ui.Dialog(owner,"调整库存分布",690,530);var root=new DockPanel{Margin=new(24)};var p=new StackPanel();
+        p.Children.Add(Ui.Text(product.Name,true));p.Children.Add(Ui.Text(product.Spec));p.Children.Add(Ui.Text($"类型：{product.TypeText}　颜色：{product.ColorText}\n物料编码：{product.MaterialCode}　单位：{product.Unit}"));var direction=new ComboBox{ItemsSource=new[]{"仓库→店面","店面→仓库"},SelectedIndex=0};var quantity=new QuantityBox();Ui.Field(p,"调拨方向",direction);Ui.Field(p,"调拨数量",quantity);var impactText=Ui.Text("");p.Children.Add(impactText);
         void Update()
         {
             try { var i=service.PreviewTransfer(product.Id,quantity.Number,direction.SelectedIndex==0);impactText.Text=$"仓库：{i.Product.Warehouse} → {i.WarehouseAfter}\n店面：{i.Product.Store} → {i.StoreAfter}\n合计：{i.Product.Total} → {i.TotalAfter}（保持不变）"; }
             catch(Exception ex) { impactText.Text=ex is BusinessException?ex.Message:"无法预览，请重试。"; }
         }
         quantity.ValueChanged+=(_,_)=>Update();direction.SelectionChanged+=(_,_)=>Update();Update();var key=Guid.NewGuid().ToString("N");
-        p.Children.Add(Ui.Row(Ui.Button("取消",()=>w.DialogResult=false),Ui.Button("确认调整",()=>
+        var actions=Ui.Row(Ui.Button("取消",()=>w.DialogResult=false),Ui.Button("确认调整",()=>
         {
             var q=quantity.Number;var forward=direction.SelectedIndex==0;var preview=service.PreviewTransfer(product.Id,q,forward);
             if(Ui.Confirm(w,"确认调整",$"{product.Display} · {direction.SelectedItem}",[preview],()=>Task.Run(()=>service.Transfer(product.Id,q,forward,key)),out var id)) {saved=id;w.DialogResult=true;}
-        },true)));w.Content=p;w.ShowDialog();return saved;
+        },true));actions.HorizontalAlignment=HorizontalAlignment.Right;DockPanel.SetDock(actions,Dock.Bottom);root.Children.Add(actions);root.Children.Add(new ScrollViewer{Content=p,VerticalScrollBarVisibility=ScrollBarVisibility.Auto,HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled});w.Content=root;w.ShowDialog();return saved;
     }
     public static string? Document(Window owner,StockService service,string id)
     {
@@ -67,7 +67,7 @@ public static class StockDialogs
         head.Children.Add(Ui.Text($"编号：{doc.Number}\n业务日期：{doc.BusinessDate:yyyy-MM-dd}　发生时间：{DateTimeOffset.Parse(doc.OccurredAt):yyyy-MM-dd HH:mm:ss zzz}"));
         if(doc.VoidAt is not null)head.Children.Add(Ui.Text($"作废时间：{doc.VoidAt}\n原因：{doc.Reason}"));
         if(doc.OriginalId is not null) { string origin;try{origin=service.GetDocument(doc.OriginalId).Number;}catch(BusinessException){origin="原单已过保留期";} head.Children.Add(Ui.Text($"关联原单：{origin}\n作废原因：{doc.Reason}")); }
-        DockPanel.SetDock(head,Dock.Top);dock.Children.Add(head);var foot=new StackPanel{Margin=new(0,16,0,0)};
+        var heading=new ScrollViewer{Content=head,MaxHeight=180,VerticalScrollBarVisibility=ScrollBarVisibility.Auto,HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled};DockPanel.SetDock(heading,Dock.Top);dock.Children.Add(heading);var foot=new StackPanel{Margin=new(0,16,0,0)};
         if(doc.Attachments.Count>0){var photos=new WrapPanel();for(var i=0;i<doc.Attachments.Count;i++){var path=service.AttachmentPath(doc.Attachments[i]);photos.Children.Add(Ui.Button($"查看照片 {i+1}",()=>Ui.Photo(w,path)));}foot.Children.Add(photos);}
         var actions=Ui.Row(Ui.Button("关闭",()=>w.Close()));
         if(doc.Status==RecordStatus.Valid&&doc.Kind is DocumentKind.Purchase or DocumentKind.Sale)actions.Children.Add(Ui.Button("作废此单据",()=>

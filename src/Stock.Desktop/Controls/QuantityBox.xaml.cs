@@ -22,7 +22,8 @@ public partial class QuantityBox : UserControl
         if(Input.Text!=Value)Input.Text=Value??"";
         var valid=IntegerInput.TryParse(Value,Minimum,out var q);
         Minus.IsEnabled=valid&&q>Minimum; Plus.IsEnabled=valid&&q<Rules.MaxQuantity;
-        Input.BorderBrush=valid||string.IsNullOrEmpty(Value)?new SolidColorBrush(Color.FromRgb(202,219,213)):Brushes.IndianRed;
+        if(valid||string.IsNullOrEmpty(Value))Input.ClearValue(System.Windows.Controls.Control.BorderBrushProperty);
+        else Input.SetResourceReference(System.Windows.Controls.Control.BorderBrushProperty,"DangerInk");
     }
     private void InputChanged(object sender,TextChangedEventArgs e) { SetCurrentValue(ValueProperty,Input.Text);Synchronize();ValueChanged?.Invoke(this,EventArgs.Empty); }
     private void Typed(object sender,TextCompositionEventArgs e) => e.Handled=e.Text.Any(c=>c is <'0' or >'9');

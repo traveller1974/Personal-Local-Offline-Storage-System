@@ -11,6 +11,7 @@ internal sealed class CropPreviewWindow : Window
     internal Image PreviewImage { get; }
     public CropPreviewWindow(Window owner,byte[] bytes,int width,int height)
     {
+        Style=(Style)Application.Current.FindResource(typeof(Window));
         Owner=owner;Title="裁剪预览";Width=900;Height=720;MinWidth=550;MinHeight=420;
         WindowStartupLocation=WindowStartupLocation.CenterOwner;
         var layout=new DockPanel{Margin=new Thickness(20)};
@@ -21,7 +22,7 @@ internal sealed class CropPreviewWindow : Window
         var actions=Ui.Row(CancelButton,ApplyButton);actions.HorizontalAlignment=HorizontalAlignment.Right;
         DockPanel.SetDock(actions,Dock.Bottom);layout.Children.Add(actions);
         PreviewImage=new Image{Source=Ui.Bitmap(bytes),Stretch=Stretch.Uniform};
-        layout.Children.Add(new Border{Background=new SolidColorBrush(Color.FromRgb(229,236,232)),Child=PreviewImage});
+        layout.Children.Add(new Border{Background=(Brush)Application.Current.FindResource("ImageBackground"),CornerRadius=new(10),Child=PreviewImage});
         Content=layout;
     }
 }

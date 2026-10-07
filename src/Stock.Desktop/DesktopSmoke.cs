@@ -60,6 +60,7 @@ public static class DesktopSmoke
             imported.Reviewed=false;cloudDraft.Preview();Check(cloudDraft.Inputs().Single().Quantity==2,"Final manual quantity overrides OCR total and does not require a marker or explanation");
             using(var perspective=new ImageSession(Path.Combine(run,"Perspective"))){perspective.Load(sample);perspective.Perspective([new(0,0),new(perspective.Width-1,0),new(perspective.Width-1,perspective.Height-1),new(0,perspective.Height-1)]);perspective.PrepareCloudImage();Check(File.Exists(perspective.ProcessedPath)&&perspective.Metadata.Contains("originalToProcessed"),"Perspective correction and source transform are retained locally");}
             await ProductEntrySmoke.RunAsync(main,Path.Combine(output,"product-entry"),Check,Capture);
+            await LayoutSmoke.RunAsync(main,Path.Combine(output,"layout"),Check,Capture);
             await ReviewInteractionSmoke.RunAsync(main,Path.Combine(output,"review-interaction"),Check,Capture);
             await ImageRegression.RunAsync(main,service,Path.Combine(output,"image-regression"),Check,Capture);
             File.WriteAllText(Path.Combine(output,"desktop-results.json"),JsonSerializer.Serialize(new{success=true,checks,runtime=Environment.Version.ToString(),os=Environment.OSVersion.ToString(),data=run},new JsonSerializerOptions{WriteIndented=true}));

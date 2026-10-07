@@ -1,0 +1,49 @@
+{
+  "dimensions": [
+    {
+      "width": 1280,
+      "height": 820,
+      "scale": 1,
+      "gridWidth": 1201.3333333333333,
+      "rowHeight": 461.3333333333333
+    },
+    {
+      "width": 980,
+      "height": 650,
+      "scale": 1,
+      "gridWidth": 901.3333333333334,
+      "rowHeight": 514.6666666666666
+    },
+    {
+      "width": 1366,
+      "height": 720,
+      "scale": 1,
+      "gridWidth": 1287.3333333333333,
+      "rowHeight": 372
+    },
+    {
+      "width": 1280,
+      "height": 680,
+      "scale": 1.25,
+      "gridWidth": 1212,
+      "rowHeight": 461.3333333333333
+    },
+    {
+      "width": 1280,
+      "height": 680,
+      "scale": 1.5,
+      "gridWidth": 1088.6666666666667,
+      "rowHeight": 514.6666666666666
+    },
+    {
+      "width": 1600,
+      "height": 940,
+      "scale": 1,
+      "gridWidth": 1521.3333333333333,
+      "rowHeight": 284
+    }
+  ],
+  "actualMonitorDpi": 144,
+  "scalingMethod": "Actual monitor rendering plus WPF LayoutTransform simulations; simulations are not physical monitor tests",
+  "userDataTouched": false
+}

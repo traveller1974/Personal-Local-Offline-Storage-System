@@ -10,13 +10,13 @@
    TextWrapping="Wrap" HorizontalScrollBarVisibility="Disabled" GotKeyboardFocus="EditorFocused" LostKeyboardFocus="EditorUnfocused" PreviewKeyDown="EditorKeyDown"/>
   <Button x:Name="OpenButton" Grid.Column="1" Content="▾" Padding="0" Margin="0" MinHeight="36" Focusable="False" ToolTip="选择已有词条；也可直接填写新值" Click="ToggleSuggestions"/>
   <Popup x:Name="SuggestionsPopup" PlacementTarget="{Binding ElementName=Editor}" Placement="Bottom" StaysOpen="False" AllowsTransparency="True" Closed="PopupClosed">
-   <Border x:Name="PopupBorder" Background="White" BorderBrush="#CADBD5" BorderThickness="1" CornerRadius="4" Padding="6">
+   <Border x:Name="PopupBorder" Background="White" BorderBrush="{StaticResource Line}" BorderThickness="1" CornerRadius="4" Padding="6">
     <StackPanel>
      <ListBox x:Name="Suggestions" BorderThickness="0" MaxHeight="220" Focusable="False" ScrollViewer.HorizontalScrollBarVisibility="Disabled" PreviewMouseLeftButtonUp="SuggestionClicked">
       <ListBox.ItemContainerStyle><Style TargetType="ListBoxItem"><Setter Property="Focusable" Value="False"/><Setter Property="Padding" Value="8,6"/><Setter Property="HorizontalContentAlignment" Value="Stretch"/></Style></ListBox.ItemContainerStyle>
-      <ListBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding}" TextWrapping="Wrap" Foreground="#173B48"/></DataTemplate></ListBox.ItemTemplate>
+      <ListBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding}" TextWrapping="Wrap" Foreground="{StaticResource Ink}"/></DataTemplate></ListBox.ItemTemplate>
      </ListBox>
-     <TextBlock x:Name="SuggestionHint" Foreground="#688276" TextWrapping="Wrap" Padding="8,6" Text="选择已有词条，或继续填写新值。"/>
+     <TextBlock x:Name="SuggestionHint" Foreground="{StaticResource Muted}" TextWrapping="Wrap" Padding="8,6" Text="选择已有词条，或继续填写新值。"/>
     </StackPanel>
    </Border>
   </Popup>
