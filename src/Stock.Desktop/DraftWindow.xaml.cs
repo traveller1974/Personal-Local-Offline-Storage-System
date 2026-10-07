@@ -22,6 +22,7 @@ public partial class DraftWindow : Window
         SaleChannel.Visibility=kind==DocumentKind.Sale?Visibility.Visible:Visibility.Collapsed;
         OcrButton.Visibility=kind==DocumentKind.Purchase?Visibility.Visible:Visibility.Collapsed;
         NewProductButton.Visibility=kind==DocumentKind.Purchase?Visibility.Visible:Visibility.Collapsed;
+        AddQuantity.Minimum=ViewModel.QuantityMinimum;
         TempDirectory=Path.Combine(Path.GetDirectoryName(service.DataDirectory)!,"Temp","draft-"+Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(TempDirectory);ReloadProducts();
         Closed+=(_,_)=>{try{Directory.Delete(TempDirectory,true);}catch(IOException){}catch(UnauthorizedAccessException){}};
@@ -43,6 +44,14 @@ public partial class DraftWindow : Window
     });
     private void Remove(object sender,RoutedEventArgs e) { if(((Button)sender).Tag is DraftLine line)ViewModel.Lines.Remove(line); }
     private void Cancel(object sender,RoutedEventArgs e) => Close();
+    private void DraftReviewClicked(object sender,RoutedEventArgs e)
+    {
+        if(sender is not CheckBox {DataContext:DraftLine line} box)return;
+        if(!IntegerInput.TryParse(line.Quantity,ViewModel.QuantityMinimum,out _))line.Reviewed=false;
+        box.GetBindingExpression(CheckBox.IsCheckedProperty)?.UpdateTarget();
+        PhotosNotice.Text=IntegerInput.TryParse(line.Quantity,ViewModel.QuantityMinimum,out _)?
+            line.Reviewed?"本行已核对，可以查看确认页。":"本行已取消核对，请检查数量。":"请先填写有效的整数数量，再勾选“已核对”。";
+    }
     private void Preview(object sender,RoutedEventArgs e) => Ui.Try(()=>
     {
         var impacts=ViewModel.Preview();
@@ -52,6 +61,6 @@ public partial class DraftWindow : Window
     private void Ocr(object sender,RoutedEventArgs e) => OpenOcr();
     public void OpenOcr()
     {
-        Ui.Try(()=>{var dialog=new OcrWindow(this,ViewModel,TempDirectory);dialog.ShowDialog();ReloadProducts();PhotosNotice.Text=$"已附加{ViewModel.Photos.Count}张原图或处理图，仅在最终入库后保存。";});
+        Ui.Try(()=>{var dialog=new OcrWindow(this,ViewModel,TempDirectory);dialog.ShowDialog();ReloadProducts();PhotosNotice.Text=$"已加入{ViewModel.PhotoHashes.Count}张照片的明细。再次修改数量后，请重新勾选“已核对”，最后确认入库。";});
     }
 }

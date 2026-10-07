@@ -5,6 +5,7 @@ $env:DOTNET_CLI_HOME = Join-Path $projectRoot 'tools/dotnet-home'
 $env:NUGET_PACKAGES = Join-Path $projectRoot 'tools/nuget-packages'
 $env:DOTNET_NOLOGO = '1'
 Set-Location -LiteralPath $projectRoot
+$appVersion=([xml](Get-Content -Raw -LiteralPath (Join-Path $projectRoot 'Directory.Build.props'))).Project.PropertyGroup.Version
 $payload = Join-Path $projectRoot 'artifacts/recognition-lab/single-file/Stock.RecognitionLab.exe'
 if (-not (Test-Path -LiteralPath $payload)) { throw 'Run build_recognition_lab.ps1 -SmokeTest first.' }
 if (-not $SkipPublish) {
@@ -16,7 +17,7 @@ foreach ($mode in @('legacy', 'embedded')) {
     $publish = Join-Path $projectRoot "artifacts/recognition-integration/publish-$mode"
     $output = Join-Path $projectRoot "artifacts/recognition-integration/$mode"
     if (-not $SkipPublish) {
-        & dotnet publish src/Stock.Desktop/Stock.Desktop.csproj -c Release --no-restore -m:1 -nodeReuse:false -r win-x64 --self-contained true -o $publish -p:PublishReadyToRun=false -p:Version=1.1.3 "-p:UseEmbeddedRecognition=$enabled"
+        & dotnet publish src/Stock.Desktop/Stock.Desktop.csproj -c Release --no-restore -m:1 -nodeReuse:false -r win-x64 --self-contained true -o $publish -p:PublishReadyToRun=false "-p:Version=$appVersion" "-p:UseEmbeddedRecognition=$enabled"
         if ($LASTEXITCODE -ne 0) { throw "Desktop publish failed: $mode" }
     }
     $application = Join-Path $publish 'LocalStockManager.exe'

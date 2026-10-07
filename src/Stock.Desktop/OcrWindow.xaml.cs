@@ -7,6 +7,7 @@ using Microsoft.Win32;
 using Stock.Core;
 using OpenCvSharp;
 using System.Windows.Media;
+using Stock.Desktop.Controls;
 using System.Text.Json;
 using Point = System.Windows.Point;
 using Window = System.Windows.Window;
@@ -29,10 +30,12 @@ public partial class OcrWindow : Window
     private bool selectingColumn,cropMode;
     private Point? cropOrigin;
     private bool busy;
+    private bool choosingProduct;
+    private readonly Dictionary<OcrReviewRow,CancellationTokenSource> pendingMatches=[];
     public OcrWindow(Window owner,DraftViewModel draft,string directory)
     {
         InitializeComponent();Owner=owner;this.draft=draft;image=new(Path.Combine(directory,"photo-"+Guid.NewGuid().ToString("N")));DataContext=this;
-        Closed+=(_,_)=>{closed=true;generation++;cancellation?.Cancel();CancelSelection();image.Dispose();};
+        Closed+=(_,_)=>{closed=true;generation++;cancellation?.Cancel();CancelMatches();CancelSelection();image.Dispose();};
     }
     private void Choose(object sender,RoutedEventArgs e) {var d=new OpenFileDialog{Filter="货单照片|*.jpg;*.jpeg;*.png"};if(d.ShowDialog(this)==true)Load(d.FileName);}
     public void Load(string path)=>Ui.Try(()=>
@@ -103,22 +106,29 @@ public partial class OcrWindow : Window
     private List<OcrReviewRow> BuildOfflineRows(InvoiceParseResult parsed)=>parsed.Rows.Select(row=>new OcrReviewRow(row,draft.Service.ProductPage(search:row.Name).Items)).ToList();
     private void ReplaceRows(IReadOnlyList<OcrReviewRow> next)
     {
+        CancelMatches();
         foreach(var row in Rows)row.PropertyChanged-=ReviewRowChanged;
         Rows.Clear();foreach(var row in next){Rows.Add(row);row.PropertyChanged+=ReviewRowChanged;}
     }
     private void ReviewRowChanged(object? sender,System.ComponentModel.PropertyChangedEventArgs e)
-    {if(e.PropertyName is nameof(OcrReviewRow.Quantity) or nameof(OcrReviewRow.Type))UpdateResultSummary();}
+    {
+        if(sender is not OcrReviewRow row)return;
+        if(!choosingProduct&&e.PropertyName is nameof(OcrReviewRow.Name) or nameof(OcrReviewRow.Spec) or nameof(OcrReviewRow.Color) or nameof(OcrReviewRow.MaterialCode) or nameof(OcrReviewRow.Type))
+            RefreshMatch(row,true);
+        if(e.PropertyName is nameof(OcrReviewRow.Quantity) or nameof(OcrReviewRow.Type) or nameof(OcrReviewRow.Reviewed) or nameof(OcrReviewRow.CanReview))UpdateResultSummary();
+    }
     private void UpdateResultSummary()
     {
-        ColumnPicker.Visibility=cloudResult is null?Visibility.Visible:Visibility.Collapsed;
+        ColumnPicker.Visibility=cloudResult is null&&response is not null?Visibility.Visible:Visibility.Collapsed;
+        var progress=$"共{Rows.Count}行，已核对{Rows.Count(r=>r.Reviewed&&r.CanReview)}行，还有{Rows.Count(r=>!r.Reviewed||!r.CanReview)}行需要处理。";
         if(cloudResult is null)
         {
-            ResultSummaryText.Text=Rows.Count==0?"识别后在这里查看实发列状态和分区合计。":$"本机备用识别：{Rows.Count}行，请对照原图核对。";
+            ResultSummaryText.Text=Rows.Count==0?"识别后，在这里检查每行货品和本次进货数量。":progress+" 请对照照片检查。";
             SectionTotalsList.ItemsSource=null;ResultWarningsText.Text="";return;
         }
-        ResultSummaryText.Text=$"识别{Rows.Count}行；"+(cloudResult.ActualQuantityColumn?"实发列已识别，仍需逐行核对。":"实发列尚未确认，不能加入进货清单。");
+        ResultSummaryText.Text=progress+(cloudResult.ActualQuantityColumn?" 已找到照片上的实发数量列。":" 没有确认照片上的实发数量列，请保留表头重新识别，或返回手动填单。");
         var hasUnknown=Rows.Any(r=>r.Type==ProductType.Unknown);
-        if(hasUnknown)ResultSummaryText.Text+=" 存在未确认货品类型，分区明细合计待核对。";
+        if(hasUnknown)ResultSummaryText.Text+=" 请先选择每行货品类型，再检查分类合计。";
         ResultWarningsText.Text=string.Join("；",cloudResult.Warnings);
         var types=new[]{ProductType.Vehicle,ProductType.Battery,ProductType.Charger,ProductType.Accessory};
         SectionTotalsList.ItemsSource=types.Select(type=>
@@ -126,42 +136,113 @@ public partial class OcrWindow : Window
             var rows=Rows.Where(r=>r.Type==type).ToList();
             var calculated=!hasUnknown&&rows.All(r=>IntegerInput.TryParse(r.Quantity,0,out _))?rows.Sum(r=>long.Parse(r.Quantity)).ToString():"待核对";
             var stated=cloudResult.SectionTotals.TryGetValue(type,out var total)&&total.HasValue?total.Value.ToString():"未提供";
-            return $"{Rules.TypeName(type)}：原单实发合计 {stated}；当前明细合计 {calculated} {Rules.Unit(type)}";
+            var difference=calculated!="待核对"&&total.HasValue?long.Parse(calculated)-total.Value:(long?)null;
+            return $"{Rules.TypeName(type)}：照片合计 {stated}；当前明细合计 {calculated} {Rules.Unit(type)}"+
+                (difference.HasValue&&difference.Value!=0?$"；相差 {difference.Value:+0;-0} {Rules.Unit(type)}（请检查数量）":"");
         }).ToArray();
     }
     internal void ApplyCloudResult(RecognitionResult result)
     {
-        var next=result.Rows.Select(row=>new OcrReviewRow(row,draft.Service.ProductPage(new ProductFilter([row.Type],[row.Name],[row.Spec],[row.Color],row.MaterialCode)).Items)).ToList();
+        var next=result.Rows.Select(row=>new OcrReviewRow(row,draft.Service.MatchRecognitionProducts(row.Type,row.Name,row.Spec,row.Color,row.MaterialCode))).ToList();
         ReplaceRows(next);cloudResult=result;response=null;regions=null;RowHighlight.Visibility=Visibility.Collapsed;ColumnPicker.ItemsSource=null;TotalOverride.Text="";
         UpdateResultSummary();
-        StatusText.Text=$"识别耗时{result.Elapsed.TotalSeconds:F1}秒，输入Token：{result.InputTokens?.ToString()??"未返回"}，输出Token：{result.OutputTokens?.ToString()??"未返回"}。全部明细需人工核对。"+string.Join("；",result.Warnings);
+        TechnicalDetails.Text=$"识别耗时{result.Elapsed.TotalSeconds:F1}秒，输入Token：{result.InputTokens?.ToString()??"未返回"}，输出Token：{result.OutputTokens?.ToString()??"未返回"}。";
+        StatusText.Text=cloudResult.ActualQuantityColumn?"识别完成。对照左侧照片，选择货品、填写本次进货数量，再逐行勾选“已核对”。":"没有确认照片上的实发数量列，不能加入进货清单。请保留表头重新识别，或关闭窗口返回手动填单。";
     }
     private void ShowParse(InvoiceParseResult parsed){var next=BuildOfflineRows(parsed);ReplaceRows(next);UpdateResultSummary();StatusText.Text=parsed.Message;}
-    private void Associate(object sender,RoutedEventArgs e)=>Ui.Try(()=>{if(((Button)sender).Tag is not OcrReviewRow row)return;var p=QueryDialogs.PickProduct(this,draft.Service);if(p is null)return;row.RefreshProducts(row.Products.Where(x=>x.Id!=p.Id).Append(p).ToList(),p);});
-    private async void TermPicked(object sender,RoutedEventArgs e)
+    private void Associate(object sender,RoutedEventArgs e)=>Ui.Try(()=>{if(((Button)sender).Tag is not OcrReviewRow row)return;var p=QueryDialogs.PickProduct(this,draft.Service);if(p is not null)ChooseExistingProduct(row,p);});
+    private void ProductSelected(object sender,SelectionChangedEventArgs e)
     {
-        if(sender is not Stock.Desktop.Controls.ProductTermBox { DataContext: OcrReviewRow row }||busy)return;
+        if(choosingProduct||sender is not ComboBox {DataContext:OcrReviewRow row,SelectedItem:Product selected} box||selected==row.Product)return;
+        Ui.Try(()=>ChooseExistingProduct(row,selected));
+        box.GetBindingExpression(ComboBox.SelectedItemProperty)?.UpdateTarget();
+    }
+    internal bool ChooseExistingProduct(OcrReviewRow row,Product selected)
+    {
+        if(!selected.Active||row.Cloud&&!selected.Complete)
+        {StatusText.Text=!selected.Active?"这个货品已停用，请选择启用的货品。":"这个货品资料未填完整，请先在库存首页编辑并补全。";return false;}
+        if(row.IdentityDifferences(selected).Count>0&&new ProductChoiceWindow(this,row,selected).ShowDialog()!=true)return false;
+        ApplyChosenProduct(row,selected);
+        return true;
+    }
+    private void ApplyChosenProduct(OcrReviewRow row,Product selected)
+    {
+        CancelMatch(row);choosingProduct=true;
+        try
+        {
+            row.Type=selected.Type;row.Name=selected.Name;row.Spec=selected.Spec;row.Color=selected.Color??"";row.MaterialCode=selected.MaterialCode??"";
+            row.RefreshProducts(row.Products.Where(x=>x.Id!=selected.Id).Append(selected).ToList(),selected);row.Reviewed=false;
+        }
+        finally{choosingProduct=false;}
+        UpdateResultSummary();
+    }
+    private void TermPicked(object sender,RoutedEventArgs e)
+    {if(sender is ProductTermBox { DataContext: OcrReviewRow row }&&!busy)RefreshMatch(row,false);}
+    private async void RefreshMatch(OcrReviewRow row,bool debounce)
+    {
+        CancelMatch(row);
+        if(closed||busy||!Rows.Contains(row))return;
+        using var request=new CancellationTokenSource();pendingMatches[row]=request;row.Matching=true;
+        var token=request.Token;
         var identity=(row.Type,row.Name,row.Spec,row.Color,row.MaterialCode);
         var currentGeneration=generation;
         try
         {
-            var filter=row.Cloud?new ProductFilter([identity.Type],[identity.Name],[identity.Spec],[identity.Color],identity.MaterialCode):new ProductFilter(Names:[identity.Name],Specs:[identity.Spec]);
-            var products=await Task.Run(()=>draft.Service.ProductPage(filter).Items);
-            if(closed||busy||currentGeneration!=generation||!Rows.Contains(row)||identity!=(row.Type,row.Name,row.Spec,row.Color,row.MaterialCode))return;
-            // Refresh the exact candidates without selecting a different identity or marking it reviewed.
-            row.RefreshProducts(products);
+            if(debounce)await Task.Delay(150,token);
+            var products=await Task.Run(()=>draft.Service.MatchRecognitionProducts(identity.Type,identity.Name,identity.Spec,identity.Color,identity.MaterialCode,row.Cloud,token),token);
+            if(closed||busy||token.IsCancellationRequested||currentGeneration!=generation||!Rows.Contains(row)||identity!=(row.Type,row.Name,row.Spec,row.Color,row.MaterialCode))return;
+            choosingProduct=true;try{row.RefreshProducts(products);}finally{choosingProduct=false;}
         }
-        catch(Exception ex){if(!closed)StatusText.Text="词条已填入，关联货品未能刷新，请点击搜索关联货品。"+ex.Message;}
+        catch(OperationCanceledException){}
+        catch(Exception ex){if(!closed&&!token.IsCancellationRequested)StatusText.Text="暂时无法查找已有货品，请点击“搜索已有货品”。"+ex.Message;}
+        finally{if(pendingMatches.TryGetValue(row,out var pending)&&pending==request){pendingMatches.Remove(row);row.Matching=false;}}
+    }
+    private void CancelMatch(OcrReviewRow row){if(pendingMatches.Remove(row,out var pending))pending.Cancel();row.Matching=false;}
+    private void CancelMatches(){foreach(var row in pendingMatches.Keys.ToArray())CancelMatch(row);}
+    private void ReviewClicked(object sender,RoutedEventArgs e)
+    {
+        if(sender is not CheckBox {DataContext:OcrReviewRow row} box)return;
+        var requested=box.IsChecked==true;
+        row.Reviewed=requested;
+        box.GetBindingExpression(CheckBox.IsCheckedProperty)?.UpdateTarget();
+        if(requested&&!row.Reviewed)
+        {StatusText.Text=$"第{Rows.IndexOf(row)+1}行还需处理："+string.Join("；",row.ReviewProblems.Select(p=>p.Message));FocusProblem(row);}
+        else StatusText.Text=requested?$"第{Rows.IndexOf(row)+1}行已核对。":$"第{Rows.IndexOf(row)+1}行已取消核对。";
+        UpdateResultSummary();
+    }
+    private void FocusProblem(OcrReviewRow row)
+    {
+        ReviewRows.UpdateLayout();
+        if(ReviewRows.ItemContainerGenerator.ContainerFromItem(row) is not FrameworkElement card)return;
+        var field=row.ReviewProblems.FirstOrDefault()?.Field;
+        FrameworkElement? target=field switch
+        {
+            "Quantity"=>Children<QuantityBox>(card).FirstOrDefault(),
+            "Type"=>Children<ComboBox>(card).FirstOrDefault(c=>c.Name=="ProductTypePicker"),
+            "Unit"=>Children<CheckBox>(card).FirstOrDefault(c=>c.Name=="ConfirmUnit"),
+            "Name" or "Spec" or "Color"=>Children<ProductTermBox>(card).FirstOrDefault(c=>c.TermField==field),
+            "MaterialCode"=>Children<TextBox>(card).FirstOrDefault(c=>c.Name=="ProductCode"),
+            _=>Children<Button>(card).FirstOrDefault(c=>c.Name=="SearchExistingProduct")
+        };
+        target??=Children<CheckBox>(card).FirstOrDefault(c=>c.Name=="ReviewedCheck");
+        if(target is null)return;
+        target.BringIntoView();
+        if(target is QuantityBox quantity)((TextBox)quantity.FindName("Input")).Focus();
+        else if(target is ProductTermBox term)term.Editor.Focus();else target.Focus();
+    }
+    private static IEnumerable<T> Children<T>(DependencyObject root) where T:DependencyObject
+    {
+        for(var i=0;i<VisualTreeHelper.GetChildrenCount(root);i++)
+        {var child=VisualTreeHelper.GetChild(root,i);if(child is T match)yield return match;foreach(var descendant in Children<T>(child))yield return descendant;}
     }
     private void ColumnChanged(object sender,SelectionChangedEventArgs e){if(!selectingColumn&&response is not null)ShowParse(InvoiceParser.Parse(response,(ColumnPicker.SelectedItem as QuantityColumn)?.Id));}
     private void NewProduct(object sender,RoutedEventArgs e)=>Ui.Try(()=>
     {if(((Button)sender).Tag is not OcrReviewRow row)return;var created=StockDialogs.Product(this,draft.Service,zeroOnly:true,name:row.Name,spec:row.Spec,type:row.Type,color:row.Color,code:row.MaterialCode);if(created is not null)ApplyCreatedProduct(row,created);});
     internal void ApplyCreatedProduct(OcrReviewRow row,Product created)
     {
-        row.Type=created.Type;row.Name=created.Name;row.Spec=created.Spec;row.Color=created.Color??"";row.MaterialCode=created.MaterialCode??"";
-        foreach(var r in Rows)r.RefreshProducts(r.Products.Where(x=>x.Id!=created.Id).Append(created).ToList(),r==row?created:null);
+        ApplyChosenProduct(row,created);
     }
-    private void RemoveRow(object sender,RoutedEventArgs e){if(((Button)sender).Tag is OcrReviewRow row){row.PropertyChanged-=ReviewRowChanged;Rows.Remove(row);UpdateResultSummary();}}
+    private void RemoveRow(object sender,RoutedEventArgs e){if(((Button)sender).Tag is OcrReviewRow row){CancelMatch(row);row.PropertyChanged-=ReviewRowChanged;Rows.Remove(row);UpdateResultSummary();}}
     private async void Locate(object sender,RoutedEventArgs e)
     {
         if(((Button)sender).Tag is not OcrReviewRow row||busy)return;
@@ -182,19 +263,26 @@ public partial class OcrWindow : Window
     private void AddRows(object sender,RoutedEventArgs e)=>Ui.Try(AddReviewedRows);
     internal void AddReviewedRows()
     {
-        if(busy||Rows.Count==0)throw new BusinessException("请识别照片并核对货品明细。");
-        if(Rows.Any(r=>!r.Reviewed||!r.CanReview))throw new BusinessException("每行必须关联货品、填写有效整数数量，并勾选已核对。");
+        if(busy||Rows.Count==0)throw new BusinessException("请先识别照片，再检查每行货品和数量。");
+        var unfinished=Rows.Where(r=>!r.Reviewed||!r.CanReview).ToArray();
+        if(unfinished.Length>0)
+        {
+            FocusProblem(unfinished[0]);
+            var message=string.Join(Environment.NewLine,unfinished.Select(r=>$"第{Rows.IndexOf(r)+1}行："+(r.CanReview?"请勾选“已核对”。":string.Join("；",r.ReviewProblems.Select(p=>p.Message)))));
+            StatusText.Text=message;throw new BusinessException(message);
+        }
         if(cloudResult?.ActualQuantityColumn==false)throw new BusinessException("实发列尚未确认，不能加入进货清单。请包含列标题重新识别，或返回进货清单手动录入。");
         var mismatches=cloudResult?.SectionTotals.Where(t=>t.Value.HasValue&&Rows.Where(r=>r.Type==t.Key).Sum(r=>long.Parse(r.Quantity))!=t.Value).ToList();
-        if(mismatches?.Count>0&&string.IsNullOrWhiteSpace(TotalOverride.Text))throw new BusinessException("分区实发合计不一致。请修正明细，或明确核对原单合计有误并填写原因。");
+        if(mismatches?.Count>0&&string.IsNullOrWhiteSpace(TotalOverride.Text))
+        {TotalCorrectionPanel.IsExpanded=true;TotalOverride.Focus();throw new BusinessException("照片合计与当前数量不一致。请先检查每行数量；如果照片上的合计写错了，请在上方填写原因。");}
         foreach(var group in Rows.GroupBy(r=>r.Product!.Id))Rules.Quantity(group.Sum(r=>long.Parse(r.Quantity)),true);
         var hash=image.ProcessedHash;if(draft.PhotoHashes.Contains(hash))throw new BusinessException("相同截图已经加入当前草稿，不能重复加入。");
         if((draft.Service.HasPhotoHash(hash)||draft.Service.HasPhotoHash(image.OriginalHash))&&MessageBox.Show(this,"相同照片或截图已用于历史单据，可能重复入库。确认这是另一张业务单据？","重复照片提示",MessageBoxButton.YesNo,MessageBoxImage.Warning)!=MessageBoxResult.Yes)return;
         // Snapshot processed photo now; later edits must not change this draft's evidence.
         var savedProcessed=Path.Combine(image.DirectoryPath,Guid.NewGuid().ToString("N")+Path.GetExtension(image.ProcessedPath));File.Copy(image.ProcessedPath,savedProcessed);
-        var photoOrder=draft.PhotoHashes.Count+1;foreach(var row in Rows)draft.Lines.Add(new(row.Product!,row.Quantity){PhotoOrder=photoOrder,OriginalOrder=row.CloudSource?.OriginalOrder??"",Marker=row.Marker,RawUnit=row.RawUnit,RawName=row.CloudSource?.RawName??row.Source.Name,ReviewNote=TotalOverride.Text});
+        var photoOrder=draft.PhotoHashes.Count+1;foreach(var row in Rows)draft.Lines.Add(new(row.Product!,row.Quantity){PhotoOrder=photoOrder,OriginalOrder=row.CloudSource?.OriginalOrder??"",Marker=row.Marker,RawUnit=row.RawUnit,RawName=row.CloudSource?.RawName??row.Source.Name,PhotoTotalCorrection=TotalOverride.Text,ReviewNote=string.Join("；",new[]{TotalOverride.Text,row.UnitReviewNote}.Where(n=>n.Length>0))});
         if(cloudResult is not null)draft.PhotoTotals[photoOrder]=cloudResult.SectionTotals;
-        draft.PhotoHashes.Add(hash);draft.Photos.Add(image.OriginalPath);draft.Photos.Add(savedProcessed);draft.PhotoMetadata[savedProcessed]=JsonSerializer.Serialize(new{image=JsonDocument.Parse(image.Metadata).RootElement.Clone(),recognition=cloudResult,reviewed=Rows.Select(r=>new{r.Name,r.Spec,r.Color,r.MaterialCode,r.Type,r.Quantity,r.RawUnit,r.Marker}),totalCorrection=TotalOverride.Text});DialogResult=true;
+        draft.PhotoHashes.Add(hash);draft.Photos.Add(image.OriginalPath);draft.Photos.Add(savedProcessed);draft.PhotoMetadata[savedProcessed]=JsonSerializer.Serialize(new{image=JsonDocument.Parse(image.Metadata).RootElement.Clone(),recognition=cloudResult,reviewed=Rows.Select(r=>new{r.Name,r.Spec,r.Color,r.MaterialCode,r.Type,r.Quantity,r.RawUnit,r.SourceRawUnit,r.UnitConfirmed,r.UnitReviewNote,r.Marker}),totalCorrection=TotalOverride.Text});DialogResult=true;
     }
     private void Camera(object sender,RoutedEventArgs e)=>Ui.Try(()=>{var photo=CameraWindow.Capture(this,image.DirectoryPath);if(photo is not null)Load(photo);});
     private void CloseWindow(object sender,RoutedEventArgs e)=>Close();

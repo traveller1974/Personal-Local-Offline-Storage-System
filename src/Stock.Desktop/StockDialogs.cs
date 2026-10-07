@@ -9,15 +9,15 @@ public static class StockDialogs
 {
     public static Product? Product(Window owner,StockService service,Product? original=null,bool zeroOnly=false,string name="",string spec="",ProductType type=ProductType.Accessory,string color="",string code="")
     {
-        var w=Ui.Dialog(owner,original is null?"新增完整身份货品":"货品资料与状态",660,850);Product? saved=null;var dock=new DockPanel{Margin=new(26)};
+        var w=Ui.Dialog(owner,original is null?"新建货品":"货品资料与状态",660,850);Product? saved=null;var dock=new DockPanel{Margin=new(26)};
         var p=new StackPanel();var nameBox=new ProductTermBox{Service=service,TermField="Name",Text=original?.Name??name,MaxLength=120};var specBox=new ProductTermBox{Service=service,TermField="Spec",Text=original?.Spec??spec,MaxLength=500,AcceptsReturn=true};var unit=new TextBox{Text=original?.Unit??"件",IsReadOnly=true,MaxLength=20};
         var choices=new[]{ProductType.Unknown,ProductType.Vehicle,ProductType.Battery,ProductType.Charger,ProductType.Accessory}.Select(t=>new Choice<ProductType>(Rules.TypeName(t),t)).ToList();
         var typeBox=new ComboBox{ItemsSource=choices,SelectedItem=choices.Single(t=>t.Value==(original?.Type??type))};
         var colorBox=new ProductTermBox{Service=service,TermField="Color",Text=original?.Color??color,MaxLength=120};var codeBox=new TextBox{Text=original?.MaterialCode??code,MaxLength=120};
         typeBox.SelectionChanged+=(_,_)=>unit.Text=typeBox.SelectedItem is Choice<ProductType> selected&&selected.Value!=ProductType.Unknown?Rules.Unit(selected.Value):original?.Unit??"待确认";
         unit.Text=(original?.Type??type)==ProductType.Unknown?original?.Unit??"待确认":Rules.Unit(original?.Type??type);
-        Ui.Field(p,"货物类型",typeBox);Ui.Field(p,"货品名称（必填）",nameBox);Ui.Field(p,"完整规格 / 型号",specBox);Ui.Field(p,"颜色（电池、充电器留空）",colorBox);Ui.Field(p,"物料编码（无编码须人工确认留空）",codeBox);Ui.Field(p,"系统单位",unit);
-        var correction=new CheckBox{Content="明确补全 / 纠正此货品身份，不拆分或合并现有库存；历史快照不改写",IsChecked=false,Margin=new(0,12,0,12)};
+        Ui.Field(p,"货物类型",typeBox);Ui.Field(p,"货品名称（必填）",nameBox);Ui.Field(p,"规格 / 型号",specBox);Ui.Field(p,"颜色（电池、充电器留空）",colorBox);Ui.Field(p,"货品编码（照片上没有编码时可留空）",codeBox);Ui.Field(p,"系统单位",unit);
+        var correction=new CheckBox{Content="我已核实本次修改的货品资料。保存后，库存数量和历史单据保持原样。",IsChecked=false,Margin=new(0,12,0,12)};
         if(original is not null)p.Children.Add(correction);
         var warehouse=new QuantityBox{Minimum=0,Value="0"};var store=new QuantityBox{Minimum=0,Value="0"};var active=new CheckBox{Content="启用此货品",IsChecked=original?.Active??true};
         if(original is null&&!zeroOnly) { Ui.Field(p,"仓库期初数量",warehouse);Ui.Field(p,"店面期初数量",store); }
@@ -29,7 +29,7 @@ public static class StockDialogs
             if(original is not null)
             {
                 var changed=original.Name!=nameBox.Text||original.Spec!=specBox.Text||original.Type!=selectedType||(original.Color??"")!=colorBox.Text||(original.MaterialCode??"")!=codeBox.Text;
-                if(changed&&correction.IsChecked!=true)throw new BusinessException("修改身份须明确勾选资料补全 / 纠错；不会自动拆分或合并库存。");
+                if(changed&&correction.IsChecked!=true)throw new BusinessException("请检查修改后的资料，再勾选“我已核实本次修改的货品资料”。");
                 if(correction.IsChecked==true)service.CompleteProduct(original.Id,selectedType,nameBox.Text,specBox.Text,colorBox.Text,codeBox.Text,active.IsChecked==true);
                 else service.UpdateProduct(original.Id,original.Name,original.Spec,active.IsChecked==true);
                 saved=service.GetProduct(original.Id);w.DialogResult=true;return;
@@ -72,7 +72,7 @@ public static class StockDialogs
         var actions=Ui.Row(Ui.Button("关闭",()=>w.Close()));
         if(doc.Status==RecordStatus.Valid&&doc.Kind is DocumentKind.Purchase or DocumentKind.Sale)actions.Children.Add(Ui.Button("作废此单据",()=>
         {
-            var impacts=service.PreviewVoid(id);var reasonWindow=Ui.Dialog(w,"填写作废原因",600,390);var panel=new StackPanel{Margin=new(24)};panel.Children.Add(Ui.Text("作废会在当前日期生成反向库存流水。请填写原因并核对库存变化。"));var reason=new TextBox{AcceptsReturn=true,Height=100,MaxLength=500};panel.Children.Add(reason);
+            var impacts=service.PreviewVoid(id);var reasonWindow=Ui.Dialog(w,"填写作废原因",600,390);var panel=new StackPanel{Margin=new(24)};panel.Children.Add(Ui.Text("作废会撤销这张单据的库存变化：进货单扣回数量，出货单加回数量。请填写原因，并检查确认页。"));var reason=new TextBox{AcceptsReturn=true,Height=100,MaxLength=500};panel.Children.Add(reason);
             var key=Guid.NewGuid().ToString("N");panel.Children.Add(Ui.Row(Ui.Button("取消",()=>reasonWindow.Close()),Ui.Button("预览作废",()=>
             { if(string.IsNullOrWhiteSpace(reason.Text))throw new BusinessException("请填写作废原因。");var reasonText=reason.Text;if(Ui.Confirm(reasonWindow,"确认作废",$"原单：{doc.Number}\n原因：{reasonText}",impacts,()=>Task.Run(()=>service.Void(id,reasonText,key)),out var reversal)){changed=reversal;reasonWindow.DialogResult=true;w.Close();} },true)));reasonWindow.Content=panel;reasonWindow.ShowDialog();
         }));

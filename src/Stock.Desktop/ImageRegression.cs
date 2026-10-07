@@ -104,7 +104,7 @@ internal static class ImageRegression
             catch(NullReferenceException){check(window.Rows.Count==1&&ReferenceEquals(window.Rows[0],retained),"Failed row construction preserves the entire previous review collection");}
             var compatible=RecognitionParser.Parse(json.Replace("\"actualQuantityColumn\":true","\"actualQuantityColumn\":\" TRUE \""));
             window.ApplyCloudResult(compatible);window.Rows[0].Quantity="2";window.Rows[0].Reviewed=true;
-            check(compatible.ActualQuantityColumn&&window.StatusText.Text.Contains("兼容转换"),"Boolean string becomes a confirmed column with a visible compatibility warning");
+            check(compatible.ActualQuantityColumn&&window.ResultWarningsText.Text.Contains("兼容转换"),"Boolean string becomes a confirmed column with a visible compatibility warning");
             var timer=new DispatcherTimer{Interval=TimeSpan.FromMilliseconds(10)};
             timer.Tick+=(_,_)=>{timer.Stop();window.AddReviewedRows();};timer.Start();
             // Exercise the actual add action in a modal window so DialogResult can close it.

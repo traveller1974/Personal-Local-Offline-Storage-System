@@ -28,6 +28,6 @@ public partial class QuantityBox : UserControl
     private void Typed(object sender,TextCompositionEventArgs e) => e.Handled=e.Text.Any(c=>c is <'0' or >'9');
     private void Pasted(object sender,DataObjectPastingEventArgs e)
     { if(!e.DataObject.GetDataPresent(DataFormats.UnicodeText)||e.DataObject.GetData(DataFormats.UnicodeText) is not string text||text.Any(c=>c is <'0' or >'9'))e.CancelCommand(); }
-    private void Decrease(object sender,RoutedEventArgs e) { if(IsValid&&Number>Minimum)Value=(Number-1).ToString(); }
-    private void Increase(object sender,RoutedEventArgs e) { if(IsValid&&Number<Rules.MaxQuantity)Value=(Number+1).ToString(); }
+    private void Decrease(object sender,RoutedEventArgs e) { if(IsValid&&Number>Minimum)SetCurrentValue(ValueProperty,(Number-1).ToString()); }
+    private void Increase(object sender,RoutedEventArgs e) { if(IsValid&&Number<Rules.MaxQuantity)SetCurrentValue(ValueProperty,(Number+1).ToString()); }
 }

@@ -106,7 +106,7 @@ public sealed partial class StockService
             using var cn = Connect(); using var tx = cn.BeginTransaction(); var product = ProductById(cn,tx,id);
             name=product.Complete?Rules.ExactIdentity(name):Rules.Clean(name);spec=product.Complete?Rules.ExactIdentity(spec):Rules.Clean(spec);
             if((name!=product.Name||spec!=product.Spec) && (product.Total!=0 || Convert.ToInt64(Scalar(cn,tx,"SELECT COUNT(*) FROM DocumentLine WHERE ProductId=$id",("$id",id)))>0))
-                throw new BusinessException("货品有关联库存或历史，请使用明确的资料补全 / 纠错流程修改身份。");
+                throw new BusinessException("这个货品已有库存或历史单据。请在库存首页点“编辑”，核实并勾选资料修改说明后保存。");
             if ((name!=product.Name||spec!=product.Spec) && Scalar(cn,tx,"SELECT Id FROM Product WHERE NameKey=$n AND SpecKey=$s AND Id<>$id",("$n",Rules.Identity(name)),("$s",Rules.Identity(spec)),("$id",id)) != null)
                 throw new BusinessException("同名同规格货品已经存在。");
             Run(cn,tx,"UPDATE Product SET Name=$n,Spec=$s,NameKey=$nk,SpecKey=$sk,Active=$a WHERE Id=$id",("$n",name),("$s",spec),("$nk",product.Complete?Rules.ExactIdentity(name):Rules.Identity(name)),("$sk",product.Complete?Rules.ExactIdentity(spec):Rules.Identity(spec)),("$a",active?1:0),("$id",id)); tx.Commit();

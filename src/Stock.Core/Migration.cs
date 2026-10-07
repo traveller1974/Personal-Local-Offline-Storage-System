@@ -85,7 +85,7 @@ public sealed partial class StockService
                 ColorKey=$ck,CodeKey=$mk,Complete=1,Active=$a,LastUsed=$date WHERE Id=$id
                 """,("$n",name.Trim()),("$s",spec.Trim()),("$u",Rules.Unit(type)),("$nk",Rules.ExactIdentity(name)),("$sk",Rules.ExactIdentity(spec)),
                 ("$t",type.ToString()),("$c",color.Trim()),("$m",code.Trim()),("$ck",Rules.ExactIdentity(color)),("$mk",Rules.ExactIdentity(code)),("$a",active?1:0),("$date",Rules.DateText(clock.Today)),("$id",id)); }
-            catch(SqliteException ex) when(ex.SqliteErrorCode==19) { throw new BusinessException("完整身份已存在，不能自动合并库存。请核对资料。"); }
+            catch(SqliteException ex) when(ex.SqliteErrorCode==19) { throw new BusinessException("已有货品使用了相同的类型、名称、规格、颜色和编码。请检查资料，库存不会自动合并。"); }
             tx.Commit();
         }
     }
@@ -107,7 +107,7 @@ public sealed partial class StockService
                 VALUES($n,$s,$u,$nk,$sk,1,$t,$c,$m,1,$ck,$mk,$d)
                 """,("$n",name.Trim()),("$s",spec.Trim()),("$u",Rules.Unit(type)),("$nk",Rules.ExactIdentity(name)),("$sk",Rules.ExactIdentity(spec)),
                 ("$t",type.ToString()),("$c",color.Trim()),("$m",code.Trim()),("$ck",Rules.ExactIdentity(color)),("$mk",Rules.ExactIdentity(code)),("$d",Rules.DateText(clock.Today))); }
-            catch(SqliteException ex) when(ex.SqliteErrorCode==19) { throw new BusinessException("相同完整身份的货品已存在（可能已停用）。"); }
+            catch(SqliteException ex) when(ex.SqliteErrorCode==19) { throw new BusinessException("相同资料的货品已存在，请选择已有货品；如果已停用，请先在库存首页启用。"); }
             var id=Convert.ToInt64(Scalar(cn,tx,"SELECT last_insert_rowid()"));
             Run(cn,tx,"INSERT INTO StockBalance VALUES($p,0,0); INSERT INTO CarryForward VALUES($p,0,0)",("$p",id));
             WriteDocument(cn,tx,DocumentKind.Opening,"期初",[new(ProductById(cn,tx,id),warehouse,store)],key);

@@ -15,6 +15,8 @@ public partial class App : Application
         DispatcherUnhandledException += (_, args) => { Ui.Error(args.Exception); args.Handled = true; };
         try
         {
+            if(e.Args.Length==2&&e.Args[0]=="--review-test")
+            {ShutdownMode=ShutdownMode.OnExplicitShutdown;await ReviewInteractionSmoke.RunStandaloneAsync(Path.GetFullPath(e.Args[1]));Shutdown(Environment.ExitCode);return;}
             if(e.Args.Length==3&&e.Args[0]=="--recognition-integration-test"&&e.Args[2] is "legacy" or "embedded")
             {
                 ShutdownMode=ShutdownMode.OnExplicitShutdown;

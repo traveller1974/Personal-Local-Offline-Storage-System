@@ -59,7 +59,7 @@ internal static class ProductEntrySmoke
             spec.Suggestions.SelectedItem = "60V"; KeyPress(spec, System.Windows.Input.Key.Enter);
             name.Editor.Focus(); name.Editor.Text = "飞驰二代"; await name.RefreshSuggestionsAsync();
             KeyPress(name, System.Windows.Input.Key.Down); KeyPress(name, System.Windows.Input.Key.Enter);
-            for(var attempt=0;attempt<100&&row.Product?.Name!="飞驰二代";attempt++)await Task.Delay(10);
+            for(var attempt=0;attempt<200&&(row.Matching||row.Product?.Name!="飞驰二代");attempt++)await Task.Delay(10);
             check(row.Product?.Name == "飞驰二代" && row.CanReview && !row.Reviewed, $"Selecting three complete matching values uses the existing exact association and manual review gate ({row.Name}, {row.Spec}, {row.Color}, product={row.Product?.Name}, review={row.Reviewed})");
 
             name.Editor.Text = "飞驰";
@@ -91,7 +91,7 @@ internal static class ProductEntrySmoke
             {
                 try
                 {
-                    var dialog = Application.Current.Windows.Cast<Window>().FirstOrDefault(w => w.Title == (stage == 0 ? "新增完整身份货品" : "确认货品与期初库存"));
+                    var dialog = Application.Current.Windows.Cast<Window>().FirstOrDefault(w => w.Title == (stage == 0 ? "新建货品" : "确认货品与期初库存"));
                     if (dialog is null) return;
                     dialog.Left = -4000; dialog.Top = -4000; dialog.ShowInTaskbar = false; dialog.UpdateLayout();
                     if (stage == 0)
@@ -117,7 +117,7 @@ internal static class ProductEntrySmoke
                 catch (Exception ex)
                 {
                     modalError = ex; timer.Stop();
-                    foreach (var dialog in Application.Current.Windows.Cast<Window>().Where(w => w.Title is "新增完整身份货品" or "确认货品与期初库存").ToArray().Reverse()) dialog.Close();
+                    foreach (var dialog in Application.Current.Windows.Cast<Window>().Where(w => w.Title is "新建货品" or "确认货品与期初库存").ToArray().Reverse()) dialog.Close();
                 }
             };
             timer.Start();

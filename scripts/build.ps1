@@ -1,4 +1,4 @@
-param([switch]$Bootstrap,[string]$DownloadProxy='',[switch]$SkipOcrBuild,[switch]$UseEmbeddedRecognition,[ValidatePattern('^\d+\.\d+\.\d+$')][string]$AppVersion='1.1.3')
+param([switch]$Bootstrap,[string]$DownloadProxy='',[switch]$SkipOcrBuild,[switch]$UseEmbeddedRecognition,[ValidatePattern('^\d+\.\d+\.\d+$')][string]$AppVersion='1.1.4')
 $ErrorActionPreference='Stop'
 $projectRoot=Split-Path $PSScriptRoot -Parent
 $env:DOTNET_CLI_HOME=Join-Path $projectRoot 'tools/dotnet-home'

@@ -14,7 +14,7 @@ internal sealed class CropPreviewWindow : Window
         Owner=owner;Title="裁剪预览";Width=900;Height=720;MinWidth=550;MinHeight=420;
         WindowStartupLocation=WindowStartupLocation.CenterOwner;
         var layout=new DockPanel{Margin=new Thickness(20)};
-        var explanation=Ui.Text($"裁剪结果：{width} × {height} 像素。确认表头、明细及分区合计完整后应用。");
+        var explanation=Ui.Text($"裁剪结果：{width} × {height} 像素。检查表头、全部货品和合计是否都在图片中，再点击应用裁剪。");
         DockPanel.SetDock(explanation,Dock.Top);layout.Children.Add(explanation);
         ApplyButton=Ui.Button("应用裁剪",()=>DialogResult=true,true);
         CancelButton=Ui.Button("取消",()=>DialogResult=false);CancelButton.IsCancel=true;

@@ -77,8 +77,9 @@ public sealed class DraftLine : Observable
     public string RawUnit { get; init; }="";
     public string RawName { get; init; }="";
     public string ReviewNote { get; init; }="";
+    public string PhotoTotalCorrection { get; init; }="";
     private bool reviewed=true;
-    public bool Reviewed { get=>reviewed;set=>Set(ref reviewed,value); }
+    public bool Reviewed { get=>reviewed;set=>Set(ref reviewed,value&&IntegerInput.TryParse(Quantity,0,out _)); }
     public Product Product { get; }
     private string quantity="1";
     public string Quantity { get=>quantity; set{if(Set(ref quantity,value)&&PhotoOrder>0)Reviewed=false;} }
@@ -88,6 +89,7 @@ public sealed class DraftViewModel : Observable
 {
     public StockService Service { get; }
     public DocumentKind Kind { get; }
+    public long QuantityMinimum => Kind==DocumentKind.Purchase?0:1;
     public string Channel { get; set; }
     public ObservableCollection<DraftLine> Lines { get; }=[];
     public List<string> Photos { get; }=[];
@@ -108,7 +110,7 @@ public sealed class DraftViewModel : Observable
         foreach(var photo in PhotoTotals)foreach(var total in photo.Value.Where(t=>t.Value.HasValue))
         {
             var photoLines=Lines.Where(l=>l.PhotoOrder==photo.Key).ToList();var sum=photoLines.Where(l=>l.Product.Type==total.Key).Sum(l=>long.Parse(l.Quantity));
-            if(sum!=total.Value&&string.IsNullOrWhiteSpace(TotalCorrection)&&!photoLines.Any(l=>l.ReviewNote.Length>0))throw new BusinessException("照片分区合计与草稿不一致，请修正或在草稿中填写明确核对原单合计有误的原因。");
+            if(sum!=total.Value&&string.IsNullOrWhiteSpace(TotalCorrection)&&!photoLines.Any(l=>l.PhotoTotalCorrection.Length>0))throw new BusinessException("照片合计与清单数量不一致。请检查数量；确认照片合计写错了，再填写原因。");
         }
         return inputs;
     }

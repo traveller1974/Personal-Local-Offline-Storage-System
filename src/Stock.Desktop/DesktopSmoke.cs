@@ -57,13 +57,14 @@ public static class DesktopSmoke
             try{cloudDraft.Preview();Check(false,"Changed totals require correction reason");}catch(BusinessException){checks.Add("Changed draft quantities recheck section totals");}cloudDraft.TotalCorrection="人工确认原合计错误";cloudDraft.Preview();
             using(var perspective=new ImageSession(Path.Combine(run,"Perspective"))){perspective.Load(sample);perspective.Perspective([new(0,0),new(perspective.Width-1,0),new(perspective.Width-1,perspective.Height-1),new(0,perspective.Height-1)]);perspective.PrepareCloudImage();Check(File.Exists(perspective.ProcessedPath)&&perspective.Metadata.Contains("originalToProcessed"),"Perspective correction and source transform are retained locally");}
             await ProductEntrySmoke.RunAsync(main,Path.Combine(output,"product-entry"),Check,Capture);
+            await ReviewInteractionSmoke.RunAsync(main,Path.Combine(output,"review-interaction"),Check,Capture);
             await ImageRegression.RunAsync(main,service,Path.Combine(output,"image-regression"),Check,Capture);
             File.WriteAllText(Path.Combine(output,"desktop-results.json"),JsonSerializer.Serialize(new{success=true,checks,runtime=Environment.Version.ToString(),os=Environment.OSVersion.ToString(),data=run},new JsonSerializerOptions{WriteIndented=true}));
         }
         catch(Exception ex){File.WriteAllText(Path.Combine(output,"desktop-results.json"),JsonSerializer.Serialize(new{success=false,checks,error=ex.ToString()},new JsonSerializerOptions{WriteIndented=true}));Environment.ExitCode=1;}
         finally{main?.Close();}
     }
-    private static void Capture(Window window,string path)
+    internal static void Capture(Window window,string path)
     {
         var content=(FrameworkElement)window.Content;content.UpdateLayout();var width=(int)Math.Ceiling(content.ActualWidth+content.Margin.Left+content.Margin.Right);var height=(int)Math.Ceiling(content.ActualHeight+content.Margin.Top+content.Margin.Bottom);
         var bitmap=new RenderTargetBitmap(width,height,96,96,PixelFormats.Pbgra32);var background=new DrawingVisual();using(var drawing=background.RenderOpen())drawing.DrawRectangle(window.Background,null,new Rect(0,0,width,height));bitmap.Render(background);bitmap.Render(content);var png=new PngBitmapEncoder();png.Frames.Add(BitmapFrame.Create(bitmap));using var file=File.Create(path);png.Save(file);
