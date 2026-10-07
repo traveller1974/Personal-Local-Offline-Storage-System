@@ -1,0 +1,16 @@
+{
+  "version": "1.2.1",
+  "embeddedRecognitionEnabled": true,
+  "recognitionPayloadSha256": "b7e96d1fb8b10bd5c7b82319c94f2ff6cb22837bc8ff28b1011a57dcf9b7b233",
+  "installerSha256": "89cabdf5b48c24700f30d6fb1150fcdcc73e308144981aae20c5d3b2c0e5ca25",
+  "installerBytes": 193745548,
+  "installer": "D:\\workspace\\codex工作区\\local-stock-manager\\dist\\LocalStockManager-1.2.1-win-x64-Setup.exe",
+  "publish": "D:\\workspace\\codex工作区\\local-stock-manager\\artifacts\\publish-1.2.1-true",
+  "integrationChecks": 123,
+  "databaseSchema": 2,
+  "offlineOcrReusedFrom": "1.2.0",
+  "realDeepSeekRequests": 6,
+  "endToEndAutomationValidated": false,
+  "firstUseDefaultProvider": "Qwen",
+  "existingProviderSelectionPreserved": true
+}

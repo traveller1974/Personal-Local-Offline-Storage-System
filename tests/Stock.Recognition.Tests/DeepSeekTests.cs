@@ -33,6 +33,19 @@ public sealed class DeepSeekTests : IDisposable
         var calls=0;using var client=new HttpClient(new Handler((_,_)=>{calls++;return Task.FromResult(new HttpResponseMessage((HttpStatusCode)status){Content=new StringContent("test-secret")});}));
         var service=new DeepSeekRecognitionService(client,configuration);Assert.Contains(message,(await Assert.ThrowsAsync<RecognitionException>(()=>service.RecognizeAsync(image))).Message);Assert.Equal(1,calls);Assert.DoesNotContain("test-secret",service.LastDiagnostic!.RawResponse);
     }
+    [Fact] public async Task OverviewAndDetailViewsUseOneBoundedRequestAndAreRecordedSeparately()
+    {
+        var calls=0;using var client=new HttpClient(new Handler(async(request,token)=>
+        {
+            calls++;using var body=JsonDocument.Parse(await request.Content!.ReadAsStringAsync(token));
+            var content=body.RootElement.GetProperty("messages")[0].GetProperty("content");
+            Assert.Equal(4,content.GetArrayLength());Assert.All(content.EnumerateArray().Take(3),entry=>Assert.Equal("image_url",entry.GetProperty("type").GetString()));
+            Assert.Contains("自上向下",content[3].GetProperty("text").GetString());
+            return new(HttpStatusCode.OK){Content=new StringContent(Envelope(QwenTests.Sample().ToJsonString()))};
+        }));
+        var service=new DeepSeekRecognitionService(client,configuration){Context=new(DetailImages:[image,image])};
+        await service.RecognizeAsync(image);Assert.Equal(1,calls);Assert.Equal(2,service.LastDiagnostic!.DetailImageCount);
+    }
     [Theory] [InlineData("")] [InlineData("{}", "length")] [InlineData("broken")]
     public async Task EmptyTruncatedAndInvalidResponsesRemainFailures(string text,string finish="stop")
     {

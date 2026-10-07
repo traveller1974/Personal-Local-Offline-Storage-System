@@ -59,7 +59,9 @@ internal static class RecognitionIntegrationSmoke
             object Row(string order, string name, string code, string type, string evidence, string quantity, string unit, string marker) => new
             {
                 originalOrder = order, rawName = name + "（" + code + "）", name, materialCode = code, spec, color = "", type,
-                sectionEvidence = evidence, rawQuantity = quantity, rawUnit = unit, marker, issues = new[] { "离线验证条目，请人工核对" }
+                sectionEvidence = evidence, rawQuantity = type=="Vehicle"&&order=="1"?"3":quantity, quantityColumn="实发",
+                quantityCandidates=new[]{new{header="计划",value=type=="Vehicle"&&order=="1"?"3":quantity},new{header="实发",value=quantity},new{header="欠发",value=type=="Vehicle"&&order=="1"?"1":"0"}},
+                rawUnit = unit, marker, issues = new[] { "离线验证条目，请人工核对" }
             };
             var model = JsonSerializer.Serialize(new
             {
@@ -86,6 +88,9 @@ internal static class RecognitionIntegrationSmoke
                 JsonSerializer.Serialize(originalResult, Recognition.RecognitionJson.Options),
                 "Worker adapter preserves all twelve row fields, duplicates, totals, warnings, actual-column flag and token usage");
             Check(result.Elapsed > TimeSpan.Zero, "Worker adapter retains cloud-call elapsed time");
+            Check(result.Rows[0].RawQuantity=="2"&&result.Rows[0].QuantityCandidates.First().Value=="3"&&
+                result.Rows[0].Issues.Any(i=>i.Contains("已按实发列")),
+                "Embedded recognition selects the explicit actual quantity while retaining planned quantity and correction advice");
             Check((await service.LocateAsync(image)).Single() == new TextRegion("测试成车（123）", 200, 150, 120, 24, 12),
                 "Desktop adapter preserves all location coordinates and angle");
             Check(original.Calls == 0, "Successful worker requests never call the original provider");

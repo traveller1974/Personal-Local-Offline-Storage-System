@@ -21,6 +21,19 @@ internal static class LabSmoke
         void Check(bool condition, string message) { if (!condition) throw new Exception(message); checks.Add(message); }
         var imagePath = Path.Combine(output, "offline-ui-test.png");
         DrawImage(imagePath);
+        var originalBytes=File.ReadAllBytes(imagePath);
+        var sourceBitmap=BitmapFrame.Create(new MemoryStream(originalBytes),BitmapCreateOptions.PreservePixelFormat,BitmapCacheOption.OnLoad);
+        var detailImages=DetailImagePreparation.Prepare(imagePath,Path.Combine(output,"detail-images"));
+        var detailFrames=detailImages.Select(p=>BitmapFrame.Create(new MemoryStream(File.ReadAllBytes(p)),BitmapCreateOptions.PreservePixelFormat,BitmapCacheOption.OnLoad)).ToArray();
+        Check(detailFrames.Length==3,"Wide tables receive multiple detail views in addition to the overview");
+        Check(detailFrames.All(f=>f.PixelWidth==800),"Detail views retain every source column");
+        Check(detailFrames.Sum(f=>f.PixelHeight)==500+60*(detailFrames.Length-1),"Detail views cover the whole table with overlapping boundaries");
+        var tallPath=Path.Combine(output,"synthetic-long-table.png");
+        Save(new TransformedBitmap(sourceBitmap,new ScaleTransform(1,20)),tallPath);
+        Check(DetailImagePreparation.Prepare(tallPath,Path.Combine(output,"tall-details")).Count==8,"Very long tables stay within the eight-detail-image limit");
+        var smallPath=Path.Combine(output,"synthetic-small-table.png");Save(new CroppedBitmap(sourceBitmap,new Int32Rect(0,0,200,120)),smallPath);
+        Check(DetailImagePreparation.Prepare(smallPath,Path.Combine(output,"small-details")).Count==0,"Small tables need no duplicate detail uploads");
+        Check(originalBytes.SequenceEqual(File.ReadAllBytes(imagePath)),"Preparing details never changes the confirmed overview bytes");
         using (var image = new LabImage())
         {
             image.Load(imagePath);

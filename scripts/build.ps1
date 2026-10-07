@@ -1,4 +1,4 @@
-param([switch]$Bootstrap,[string]$DownloadProxy='',[switch]$SkipOcrBuild,[switch]$UseEmbeddedRecognition,[ValidatePattern('^\d+\.\d+\.\d+$')][string]$AppVersion='1.2.0')
+param([switch]$Bootstrap,[string]$DownloadProxy='',[switch]$SkipOcrBuild,[switch]$UseEmbeddedRecognition,[ValidatePattern('^\d+\.\d+\.\d+$')][string]$AppVersion='1.2.1')
 $ErrorActionPreference='Stop'
 $projectRoot=Split-Path $PSScriptRoot -Parent
 $env:DOTNET_CLI_HOME=Join-Path $projectRoot 'tools/dotnet-home'
@@ -60,7 +60,8 @@ Get-ChildItem -LiteralPath $publish -Filter 'opencv_videoio_ffmpeg*.dll' -File -
 }
 & $python scripts/collect_licenses.py
 if($LASTEXITCODE -ne 0){throw 'License collection failed'}
-Copy-Item -LiteralPath docs/使用说明.md,docs/已知限制.md,docs/千问识别独立测试.md,docs/发布说明-v1.2.0.md,docs/识图自动填单架构-v1.2.md,THIRD-PARTY-NOTICES.md -Destination $publish -Force
+$releaseNotes=Join-Path $projectRoot "docs/发布说明-v$AppVersion.md"
+Copy-Item -LiteralPath docs/使用说明.md,docs/已知限制.md,docs/千问识别独立测试.md,$releaseNotes,docs/识图自动填单架构-v1.2.md,THIRD-PARTY-NOTICES.md -Destination $publish -Force
 Copy-Item -LiteralPath licenses -Destination $publish -Recurse -Force
 New-Item -ItemType Directory -Force dist | Out-Null
 $installer=Join-Path $projectRoot "dist/LocalStockManager-$AppVersion-win-x64-Setup.exe"

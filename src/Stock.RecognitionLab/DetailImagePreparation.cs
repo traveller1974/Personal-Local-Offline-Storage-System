@@ -11,10 +11,14 @@ internal static class DetailImagePreparation
     {
         using var stream=File.OpenRead(image);
         var bitmap=BitmapDecoder.Create(stream,BitmapCreateOptions.PreservePixelFormat,BitmapCacheOption.OnLoad).Frames[0];
-        if(bitmap.PixelHeight<bitmap.PixelWidth*2)return [];
+        var longImage=bitmap.PixelHeight>=bitmap.PixelWidth*2;
+        if(!longImage&&(bitmap.PixelWidth<600||bitmap.PixelHeight<220))return [];
+        // Wide tables can also have tiny characters. Shorter full-width views retain column and row order.
+        var targetHeight=Math.Max(100,longImage?bitmap.PixelWidth:bitmap.PixelWidth/4);
+        var count=Math.Min(8,(int)Math.Ceiling((double)bitmap.PixelHeight/targetHeight));
+        if(count<2)return [];
         Directory.CreateDirectory(directory);
-        var height=Math.Max(100,bitmap.PixelWidth);var count=(int)Math.Ceiling((double)bitmap.PixelHeight/height);
-        if(count>8)height=(int)Math.Ceiling(bitmap.PixelHeight/8d);
+        var height=(int)Math.Ceiling((double)bitmap.PixelHeight/count);
         var images=new List<string>();
         for(var y=0;y<bitmap.PixelHeight;y+=height)
         {

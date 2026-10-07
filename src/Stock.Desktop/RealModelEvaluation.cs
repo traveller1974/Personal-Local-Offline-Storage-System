@@ -23,7 +23,9 @@ internal static class RealModelEvaluation
         {
             var id=sample.GetProperty("id").GetString()!;var image=sample.GetProperty("confirmedImage").GetString()!;
             if(sample.GetProperty("uploadConfirmed").GetBoolean()!=true)throw new BusinessException("样单截图必须事先确认上传范围。");
-            var provider=Shared.RecognitionProviderFactory.Create(client,configuration);
+            var details=configuration.Provider==Shared.RecognitionProviderKind.DeepSeek
+                ? Shared.DetailImagePreparation.Prepare(image,Path.Combine(output,id+"-details")) : [];
+            var provider=Shared.RecognitionProviderFactory.Create(client,configuration,new(DetailImages:details));
             var improved=Path.Combine(output,id+"-improved.json");var failed=Path.Combine(output,id+"-failure.json");
             if(File.Exists(improved)) { using var stored=JsonDocument.Parse(File.ReadAllText(improved)); summaries.Add(new{sample=id,provider=configuration.Provider.ToString(),variant="improved",report=stored.RootElement.GetProperty("report").Clone()}); }
             else if(File.Exists(failed))summaries.Add(new{sample=id,provider=configuration.Provider.ToString(),variant="improved",success=false});

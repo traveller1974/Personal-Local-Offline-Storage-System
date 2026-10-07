@@ -11,7 +11,7 @@ namespace Stock.Recognition;
 public sealed partial class QwenRecognitionService(HttpClient client, QwenConfiguration configuration) : IRecognitionProvider
 {
     public const string Model = "qwen3.5-ocr";
-    public const string PromptVersion = "stock-invoice-v1.2.0";
+    public const string PromptVersion = "stock-invoice-v1.2.1";
     public static string PromptSha256 => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(Prompt)));
     public TimeSpan Timeout { get; init; } = TimeSpan.FromSeconds(90);
     public RecognitionDiagnostic? LastDiagnostic { get; private set; }

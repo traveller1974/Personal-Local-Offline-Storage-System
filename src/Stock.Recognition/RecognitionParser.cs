@@ -44,7 +44,6 @@ public static class RecognitionParser
                 if(!Enum.TryParse<RecognitionProductType>(typeText,false,out var type)||!Enum.IsDefined(type)||typeText!=type.ToString())
                 {type=RecognitionProductType.Unknown;issues.Add("货物类型不明，请人工确认");}
                 var raw=S("rawQuantity",true).Trim();
-                if(!Quantity(raw,out _))issues.Add("实发数量缺失或不是有效的非负整数，请人工修正");
                 var name=S("name");var original=S("rawName");var code=S("materialCode");
                 var suffix=Regex.Match(original,@"^(?<name>.+)[（(](?<code>[0-9]+)[）)]\s*$",RegexOptions.Singleline);
                 if(suffix.Success)
@@ -57,7 +56,6 @@ public static class RecognitionParser
                 var sectionTypes=new[]{(Label:"成车",Type:RecognitionProductType.Vehicle),(Label:"电池",Type:RecognitionProductType.Battery),(Label:"充电器",Type:RecognitionProductType.Charger),(Label:"附件",Type:RecognitionProductType.Accessory)}.Where(s=>evidence.Contains(s.Label,StringComparison.Ordinal)).Select(s=>s.Type).Distinct().ToList();
                 if(sectionTypes.Count>1||sectionTypes.Count==1&&sectionTypes[0]!=type)issues.Add("分区依据与货物类型冲突，必须人工确认");
                 if(evidence.Length==0)issues.Add("分区依据缺失，必须核对类型");
-                if(name.Length==0||raw.Length==0)issues.Add("必填名称或实发数量不清楚");
                 var order=S("originalOrder",true);
                 if(row.TryGetProperty("originalOrder",out var orderValue)&&orderValue.ValueKind is not(JsonValueKind.String or JsonValueKind.Null)&&
                    (orderValue.ValueKind!=JsonValueKind.Number||!long.TryParse(order,NumberStyles.None,CultureInfo.InvariantCulture,out _)))
@@ -69,6 +67,9 @@ public static class RecognitionParser
                            candidate.TryGetProperty("value",out var v) && v.ValueKind == JsonValueKind.String)
                             candidates.Add(new(h.GetString()!,v.GetString()!));
                 var column = row.TryGetProperty("quantityColumn",out var col) && col.ValueKind == JsonValueKind.String ? col.GetString()! : "";
+                (raw,column)=SelectActualQuantity(raw,column,candidates,actual,issues);
+                if(!Quantity(raw,out _))issues.Add("实发数量缺失或不是有效的非负整数，请人工修正");
+                if(name.Length==0||raw.Length==0)issues.Add("必填名称或实发数量不清楚");
                 rows.Add(new(order,original,name,code,S("spec"),color,type,evidence,raw,unit,S("marker"),issues.Distinct().ToList())
                     { RowId = $"row-{rowIndex:D4}", QuantityColumn = column, QuantityCandidates = candidates });
             }
@@ -91,6 +92,37 @@ public static class RecognitionParser
         catch(JsonException){throw Error("$","JSON 无效、嵌套过深或输出截断");}
     }
     public static bool Quantity(string text,out long value)=>long.TryParse(text,NumberStyles.None,CultureInfo.InvariantCulture,out value)&&value is >=0 and <=int.MaxValue;
+    private static (string Quantity,string Column) SelectActualQuantity(string raw,string column,
+        IReadOnlyList<QuantityCandidate> candidates,bool actual,List<string> issues)
+    {
+        // Select an explicitly transcribed column, never calculate a missing quantity from a total or another column.
+        if(!actual)return (raw,column);
+        static string Header(string value)=>Regex.Replace(value,@"\s","");
+        static bool IsActual(string value)=>value is "实发" or "实发数量" or "实际发货" or "实际发货数量" or "本次送货" or "本次送货数量";
+        var actualCandidates=candidates.Where(c=>IsActual(Header(c.Header))).ToArray();
+        if(actualCandidates.Length==0)
+        {
+            if(Header(column) is "计划" or "计划数量" or "欠发" or "欠发数量")
+                issues.Add("识别取了计划或欠发列，请对照照片填写本次进货数量。");
+            return (raw,column);
+        }
+        var values=actualCandidates.Select(c=>c.Value.Trim()).Distinct(StringComparer.Ordinal).ToArray();
+        if(values.Length!=1||!Quantity(values[0],out var actualValue))
+        {
+            issues.Add("识别出的实发数量有矛盾或看不清，请对照照片填写。");
+            return (raw,column);
+        }
+        var planned=candidates.Where(c=>Header(c.Header) is "计划" or "计划数量").Select(c=>c.Value.Trim()).Distinct().ToArray();
+        var shortage=candidates.Where(c=>Header(c.Header) is "欠发" or "欠发数量").Select(c=>c.Value.Trim()).Distinct().ToArray();
+        if(planned.Length==1&&shortage.Length==1&&Quantity(planned[0],out var plannedValue)&&Quantity(shortage[0],out var shortageValue)&&
+            plannedValue!=actualValue+shortageValue)
+        {
+            issues.Add("照片的计划、实发和欠发数量对不上，请对照照片检查；程序没有按差额改数量。");
+            return (raw,column);
+        }
+        if(raw!=values[0])issues.Add($"识别数量与实发列不同，已按实发列填写{values[0]}，请对照照片检查。");
+        return (values[0],actualCandidates[0].Header);
+    }
     private static bool ActualColumn(JsonElement root,List<string> warnings)
     {
         if(!root.TryGetProperty("actualQuantityColumn",out var column)||column.ValueKind==JsonValueKind.Null)
