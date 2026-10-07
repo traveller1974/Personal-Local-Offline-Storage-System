@@ -9,6 +9,7 @@ using OpenCvSharp;
 using System.Windows.Media;
 using Stock.Desktop.Controls;
 using System.Text.Json;
+using Recognition = Stock.Recognition;
 using Point = System.Windows.Point;
 using Window = System.Windows.Window;
 
@@ -90,13 +91,21 @@ public partial class OcrWindow : Window
         if(!offline&&(!tableRange||UploadConfirm.IsChecked!=true)){StatusText.Text="请先应用四角或手动裁剪，并确认只上传表格截图。";return;}
         try{if(!offline){image.PrepareCloudImage();UpdateImage();}}catch(Exception ex){StatusText.Text=ex.Message;return;}
         busy=true;Toolbar.IsEnabled=ReviewPanel.IsEnabled=RecognizeButton.IsEnabled=AddRowsButton.IsEnabled=false;CancelOcrButton.Visibility=Visibility.Visible;
-        cancellation=new();var token=cancellation.Token;var requestGeneration=++generation;StatusText.Text=offline?"正在本机识别，最多等待120秒。":$"正在调用百炼 qwen3.5-ocr，最多等待{(QwenSettings.UsesEmbeddedRecognition?120:90)}秒；不会自动重试。";
+        cancellation=new();var token=cancellation.Token;var requestGeneration=++generation;var preserveManual=Rows.Any(r=>r.HumanEdited||r.Reviewed);
+        StatusText.Text=offline?"正在本机识别，最多等待120秒。":"正在识别；可随时取消。填写内容已保留。";
         try
         {
             if(offline)
-            {var result=await new OcrClient().RecognizeAsync(image.ProcessedPath,token);if(closed||requestGeneration!=generation||token.IsCancellationRequested)return;var parsed=InvoiceParser.Parse(result);var next=BuildOfflineRows(parsed);selectingColumn=true;ColumnPicker.ItemsSource=parsed.QuantityColumns;ColumnPicker.SelectedIndex=parsed.QuantityColumns.Count==1?0:-1;selectingColumn=false;ReplaceRows(next);response=result;cloudResult=null;TotalOverride.Text="";UpdateResultSummary();StatusText.Text=parsed.Message;}
+            {var result=await new OcrClient().RecognizeAsync(image.ProcessedPath,token);if(closed||requestGeneration!=generation||token.IsCancellationRequested)return;if(preserveManual){StatusText.Text="识别已完成，已有人工修改的明细已保留。";return;}var parsed=InvoiceParser.Parse(result);var next=BuildOfflineRows(parsed);selectingColumn=true;ColumnPicker.ItemsSource=parsed.QuantityColumns;ColumnPicker.SelectedIndex=parsed.QuantityColumns.Count==1?0:-1;selectingColumn=false;ReplaceRows(next);response=result;cloudResult=null;TotalOverride.Text="";UpdateResultSummary();StatusText.Text=parsed.Message;}
             else
-            {var result=await QwenSettings.Service(draft.Service).RecognizeAsync(image.ProcessedPath,token);if(closed||requestGeneration!=generation||token.IsCancellationRequested)return;ApplyCloudResult(result);}
+            {
+                var configuration=RecognitionSettings.Load(draft.Service);
+                var details=configuration.Provider==Recognition.RecognitionProviderKind.DeepSeek?Recognition.DetailImagePreparation.Prepare(image.ProcessedPath,Path.Combine(image.DirectoryPath,"details")):[];
+                var result=await RecognitionSettings.RecognizeAsync(draft.Service,image.ProcessedPath,new(DetailImages:details),token);
+                if(closed||requestGeneration!=generation||token.IsCancellationRequested)return;
+                if(preserveManual){StatusText.Text="识别已完成，已有人工修改的明细已保留。可以继续填写并加入清单。";return;}
+                ApplyCloudResult(result);
+            }
         }
         catch(OperationCanceledException){StatusText.Text="识别已取消，库存未改变。";}
         catch(Exception ex){if(!closed)StatusText.Text=ex.Message+" 原有核对明细和草稿已保留，可主动重试或手动录入。";}
@@ -120,13 +129,13 @@ public partial class OcrWindow : Window
     private void UpdateResultSummary()
     {
         ColumnPicker.Visibility=cloudResult is null&&response is not null?Visibility.Visible:Visibility.Collapsed;
-        var progress=$"共{Rows.Count}行，已核对{Rows.Count(r=>r.Reviewed&&r.CanReview)}行，还有{Rows.Count(r=>!r.Reviewed||!r.CanReview)}行需要处理。";
+        var progress=$"共{Rows.Count}行，已自动填写{Rows.Count(r=>r.AutomaticallyFilled&&!r.HumanEdited)}行，已核对{Rows.Count(r=>r.Reviewed)}行，还有{Rows.Count(r=>!r.CanReview)}行需要补齐。";
         if(cloudResult is null)
         {
             ResultSummaryText.Text=Rows.Count==0?"识别后，在这里检查每行货品和本次进货数量。":progress+" 请对照照片检查。";
             SectionTotalsList.ItemsSource=null;ResultWarningsText.Text="";return;
         }
-        ResultSummaryText.Text=progress+(cloudResult.ActualQuantityColumn?" 已找到照片上的实发数量列。":" 没有确认照片上的实发数量列，请保留表头重新识别，或返回手动填单。");
+        ResultSummaryText.Text=progress+(cloudResult.ActualQuantityColumn?" 已找到照片上的本次发货数量列。":" 没有看清照片中的数量，请填写本次进货数量。加入清单时使用你填写的值。");
         var hasUnknown=Rows.Any(r=>r.Type==ProductType.Unknown);
         if(hasUnknown)ResultSummaryText.Text+=" 请先选择每行货品类型，再检查分类合计。";
         ResultWarningsText.Text=string.Join("；",cloudResult.Warnings);
@@ -143,11 +152,19 @@ public partial class OcrWindow : Window
     }
     internal void ApplyCloudResult(RecognitionResult result)
     {
-        var next=result.Rows.Select(row=>new OcrReviewRow(row,draft.Service.MatchRecognitionProducts(row.Type,row.Name,row.Spec,row.Color,row.MaterialCode))).ToList();
+        var style=StockService.InvoiceStyle(result);
+        choosingProduct=true;
+        List<OcrReviewRow> next;
+        try { next=result.Rows.Select(source=>
+        {
+            var match=draft.Service.MatchRecognition(source,style);var row=new OcrReviewRow(source,match.Candidates);
+            if(match.Selected is not null)row.ApplyAutomaticProduct(match.Selected,match.Source,result.ActualQuantityColumn&&source.Issues.Count==0&&IntegerInput.TryParse(source.RawQuantity,0,out _));
+            return row;
+        }).ToList(); } finally{choosingProduct=false;}
         ReplaceRows(next);cloudResult=result;response=null;regions=null;RowHighlight.Visibility=Visibility.Collapsed;ColumnPicker.ItemsSource=null;TotalOverride.Text="";
         UpdateResultSummary();
         TechnicalDetails.Text=$"识别耗时{result.Elapsed.TotalSeconds:F1}秒，输入Token：{result.InputTokens?.ToString()??"未返回"}，输出Token：{result.OutputTokens?.ToString()??"未返回"}。";
-        StatusText.Text=cloudResult.ActualQuantityColumn?"识别完成。对照左侧照片，选择货品、填写本次进货数量，再逐行勾选“已核对”。":"没有确认照片上的实发数量列，不能加入进货清单。请保留表头重新识别，或关闭窗口返回手动填单。";
+        StatusText.Text="识别完成。请检查提示的内容，数量可以直接修改。加入清单后，最后点击“确认入库”。";
     }
     private void ShowParse(InvoiceParseResult parsed){var next=BuildOfflineRows(parsed);ReplaceRows(next);UpdateResultSummary();StatusText.Text=parsed.Message;}
     private void Associate(object sender,RoutedEventArgs e)=>Ui.Try(()=>{if(((Button)sender).Tag is not OcrReviewRow row)return;var p=QueryDialogs.PickProduct(this,draft.Service);if(p is not null)ChooseExistingProduct(row,p);});
@@ -235,7 +252,7 @@ public partial class OcrWindow : Window
         for(var i=0;i<VisualTreeHelper.GetChildrenCount(root);i++)
         {var child=VisualTreeHelper.GetChild(root,i);if(child is T match)yield return match;foreach(var descendant in Children<T>(child))yield return descendant;}
     }
-    private void ColumnChanged(object sender,SelectionChangedEventArgs e){if(!selectingColumn&&response is not null)ShowParse(InvoiceParser.Parse(response,(ColumnPicker.SelectedItem as QuantityColumn)?.Id));}
+    private void ColumnChanged(object sender,SelectionChangedEventArgs e){if(!selectingColumn&&response is not null){if(Rows.Any(r=>r.HumanEdited||r.Reviewed)){StatusText.Text="已有人工填写的明细已保留，请直接修改本次进货数量。";return;}ShowParse(InvoiceParser.Parse(response,(ColumnPicker.SelectedItem as QuantityColumn)?.Id));}}
     private void NewProduct(object sender,RoutedEventArgs e)=>Ui.Try(()=>
     {if(((Button)sender).Tag is not OcrReviewRow row)return;var created=StockDialogs.Product(this,draft.Service,zeroOnly:true,name:row.Name,spec:row.Spec,type:row.Type,color:row.Color,code:row.MaterialCode);if(created is not null)ApplyCreatedProduct(row,created);});
     internal void ApplyCreatedProduct(OcrReviewRow row,Product created)
@@ -249,9 +266,10 @@ public partial class OcrWindow : Window
         if(!row.Cloud){var box=row.Source.Box;if(box.Length==0)return;Highlight(box.Min(p=>p[0]),box.Min(p=>p[1]),box.Max(p=>p[0])-box.Min(p=>p[0]),box.Max(p=>p[1])-box.Min(p=>p[1]));return;}
         if(regions is null)
         {
+            if(RecognitionSettings.Load(draft.Service).Provider==Recognition.RecognitionProviderKind.DeepSeek){StatusText.Text="请用左侧图片缩放对照，DeepSeek 暂不提供文字位置。";return;}
             if(MessageBox.Show(this,"文字定位将另发一次付费识别请求，只上传当前确认的截图。同一会话内复用结果。","文字定位",MessageBoxButton.OKCancel)!=MessageBoxResult.OK)return;
             busy=true;cancellation=new();var requestGeneration=generation;Toolbar.IsEnabled=ReviewPanel.IsEnabled=RecognizeButton.IsEnabled=AddRowsButton.IsEnabled=false;CancelOcrButton.Visibility=Visibility.Visible;
-            try{var result=await QwenSettings.Service(draft.Service).LocateAsync(image.ProcessedPath,cancellation.Token);if(closed||requestGeneration!=generation||cancellation.IsCancellationRequested)return;regions=result;}
+            try{var result=await RecognitionSettings.Service(draft.Service).LocateAsync(image.ProcessedPath,cancellation.Token);if(closed||requestGeneration!=generation||cancellation.IsCancellationRequested)return;regions=result;}
             catch(Exception ex){if(!closed)StatusText.Text=ex.Message;return;}finally{busy=false;cancellation.Dispose();cancellation=null;Toolbar.IsEnabled=ReviewPanel.IsEnabled=RecognizeButton.IsEnabled=AddRowsButton.IsEnabled=true;CancelOcrButton.Visibility=Visibility.Collapsed;}
         }
         var targets=regions.Where(r=>Rules.Identity(r.Text)==Rules.Identity(row.CloudSource!.RawName)||Rules.Identity(r.Text)==Rules.Identity(row.Name)).ToList();
@@ -263,27 +281,34 @@ public partial class OcrWindow : Window
     private void AddRows(object sender,RoutedEventArgs e)=>Ui.Try(AddReviewedRows);
     internal void AddReviewedRows()
     {
-        if(busy||Rows.Count==0)throw new BusinessException("请先识别照片，再检查每行货品和数量。");
-        var unfinished=Rows.Where(r=>!r.Reviewed||!r.CanReview).ToArray();
-        if(unfinished.Length>0)
-        {
-            FocusProblem(unfinished[0]);
-            var message=string.Join(Environment.NewLine,unfinished.Select(r=>$"第{Rows.IndexOf(r)+1}行："+(r.CanReview?"请勾选“已核对”。":string.Join("；",r.ReviewProblems.Select(p=>p.Message)))));
-            StatusText.Text=message;throw new BusinessException(message);
-        }
-        if(cloudResult?.ActualQuantityColumn==false)throw new BusinessException("实发列尚未确认，不能加入进货清单。请包含列标题重新识别，或返回进货清单手动录入。");
-        var mismatches=cloudResult?.SectionTotals.Where(t=>t.Value.HasValue&&Rows.Where(r=>r.Type==t.Key).Sum(r=>long.Parse(r.Quantity))!=t.Value).ToList();
-        if(mismatches?.Count>0&&string.IsNullOrWhiteSpace(TotalOverride.Text))
-        {TotalCorrectionPanel.IsExpanded=true;TotalOverride.Focus();throw new BusinessException("照片合计与当前数量不一致。请先检查每行数量；如果照片上的合计写错了，请在上方填写原因。");}
+        ValidateCurrentForm();
         foreach(var group in Rows.GroupBy(r=>r.Product!.Id))Rules.Quantity(group.Sum(r=>long.Parse(r.Quantity)),true);
         var hash=image.ProcessedHash;if(draft.PhotoHashes.Contains(hash))throw new BusinessException("相同截图已经加入当前草稿，不能重复加入。");
         if((draft.Service.HasPhotoHash(hash)||draft.Service.HasPhotoHash(image.OriginalHash))&&MessageBox.Show(this,"相同照片或截图已用于历史单据，可能重复入库。确认这是另一张业务单据？","重复照片提示",MessageBoxButton.YesNo,MessageBoxImage.Warning)!=MessageBoxResult.Yes)return;
         // Snapshot processed photo now; later edits must not change this draft's evidence.
         var savedProcessed=Path.Combine(image.DirectoryPath,Guid.NewGuid().ToString("N")+Path.GetExtension(image.ProcessedPath));File.Copy(image.ProcessedPath,savedProcessed);
-        var photoOrder=draft.PhotoHashes.Count+1;foreach(var row in Rows)draft.Lines.Add(new(row.Product!,row.Quantity){PhotoOrder=photoOrder,OriginalOrder=row.CloudSource?.OriginalOrder??"",Marker=row.Marker,RawUnit=row.RawUnit,RawName=row.CloudSource?.RawName??row.Source.Name,PhotoTotalCorrection=TotalOverride.Text,ReviewNote=string.Join("；",new[]{TotalOverride.Text,row.UnitReviewNote}.Where(n=>n.Length>0))});
+        var photoOrder=draft.PhotoHashes.Count+1;foreach(var row in Rows)draft.Lines.Add(new(row.Product!,row.Quantity){Reviewed=row.Reviewed,RecognitionEvidence=row.CloudSource,SourceRowId=row.RowId,HumanEdited=row.HumanEdited,FieldSources=row.FieldSources,InvoiceStyle=cloudResult is null?"":StockService.InvoiceStyle(cloudResult),PhotoOrder=photoOrder,OriginalOrder=row.CloudSource?.OriginalOrder??"",Marker=row.Marker,RawUnit=row.RawUnit,RawName=row.CloudSource?.RawName??row.Source.Name,PhotoTotalCorrection=TotalOverride.Text,ReviewNote=string.Join("；",new[]{TotalOverride.Text,row.UnitReviewNote}.Where(n=>n.Length>0))});
         if(cloudResult is not null)draft.PhotoTotals[photoOrder]=cloudResult.SectionTotals;
-        draft.PhotoHashes.Add(hash);draft.Photos.Add(image.OriginalPath);draft.Photos.Add(savedProcessed);draft.PhotoMetadata[savedProcessed]=JsonSerializer.Serialize(new{image=JsonDocument.Parse(image.Metadata).RootElement.Clone(),recognition=cloudResult,reviewed=Rows.Select(r=>new{r.Name,r.Spec,r.Color,r.MaterialCode,r.Type,r.Quantity,r.RawUnit,r.SourceRawUnit,r.UnitConfirmed,r.UnitReviewNote,r.Marker}),totalCorrection=TotalOverride.Text});DialogResult=true;
+        draft.PhotoHashes.Add(hash);draft.Photos.Add(image.OriginalPath);draft.Photos.Add(savedProcessed);draft.PhotoMetadata[savedProcessed]=JsonSerializer.Serialize(new{photoOrder,image=JsonDocument.Parse(image.Metadata).RootElement.Clone(),recognition=cloudResult,reviewed=Rows.Select(r=>new{r.Name,r.Spec,r.Color,r.MaterialCode,r.Type,r.Quantity,r.RawUnit,r.SourceRawUnit,r.UnitConfirmed,r.UnitReviewNote,r.Marker}),totalCorrection=TotalOverride.Text});DialogResult=true;
     }
+    internal void ValidateCurrentForm()
+    {
+        if(busy||Rows.Count==0)throw new BusinessException("请先识别照片，再检查每行货品和数量。");
+        var unfinished=Rows.Where(r=>!r.CanReview).ToArray();
+        if(unfinished.Length>0)
+        {
+            FocusProblem(unfinished[0]);
+            var message=string.Join(Environment.NewLine,unfinished.Select(r=>$"第{Rows.IndexOf(r)+1}行："+string.Join("；",r.ReviewProblems.Select(p=>p.Message))));
+            StatusText.Text=message;throw new BusinessException(message);
+        }
+    }
+    private void AddManualRow(object sender,RoutedEventArgs e)
+    {
+        var row=new OcrReviewRow(new RecognizedRow("","","","","","",ProductType.Unknown,"","","","",[]),[]);
+        Rows.Add(row);row.PropertyChanged+=ReviewRowChanged;UpdateResultSummary();
+    }
+    private void NextProblem(object sender,RoutedEventArgs e)
+    {var row=Rows.FirstOrDefault(r=>!r.CanReview);if(row is not null)FocusProblem(row);else StatusText.Text="表单已填完整，可以加入进货清单。";}
     private void Camera(object sender,RoutedEventArgs e)=>Ui.Try(()=>{var photo=CameraWindow.Capture(this,image.DirectoryPath);if(photo is not null)Load(photo);});
     private void CloseWindow(object sender,RoutedEventArgs e)=>Close();
     private void Dragged(object sender,DragEventArgs e){e.Effects=!busy&&e.Data.GetDataPresent(DataFormats.FileDrop)?DragDropEffects.Copy:DragDropEffects.None;e.Handled=true;}

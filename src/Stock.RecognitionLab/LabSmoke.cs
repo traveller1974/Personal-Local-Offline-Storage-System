@@ -52,7 +52,7 @@ internal static class LabSmoke
             using var client = new HttpClient(new LocalReplay.Handler(raw));
             var service = new QwenRecognitionService(client, new("offline-test-placeholder", QwenConfiguration.Beijing));
             await window.CaptureAsync(service, "local-replay");
-            Check(window.Rows.Count == 3 && window.Rows.All(r => r.Fields.Count == 12), "Every row displays all twelve fields");
+            Check(window.Rows.Count == 3 && window.Rows.All(r => r.Fields.Count == 14), "Every row displays all extraction fields and quantity column candidates");
             Check(window.Rows[2].Fields.Single(f => f.Label == "原始实发数量").Value == "0", "Zero quantity remains visible");
             Check(window.Rows[0].Fields.Single(f => f.Label == "完整规格").Value.Contains('\n'), "Full multiline specification survives display");
             Check(window.ResponseBox.Text == raw && !string.IsNullOrWhiteSpace(window.ModelTextBox.Text), "Original envelope and model text are separately visible");

@@ -29,7 +29,7 @@ public static class RecognitionParser
             foreach(var row in rowArray.EnumerateArray())
             {
                 var path=$"rows[{rowIndex++}]";var issues=new List<string>();
-                Object(row,path,issues,"originalOrder","rawName","name","materialCode","spec","color","type","sectionEvidence","rawQuantity","rawUnit","marker","issues");
+                Object(row,path,issues,"originalOrder","rawName","name","materialCode","spec","color","type","sectionEvidence","rawQuantity","rawUnit","marker","issues","quantityColumn","quantityCandidates");
                 issues.AddRange(Strings(row,"issues",path+".issues"));
                 string S(string key,bool scalar=false)
                 {
@@ -62,7 +62,15 @@ public static class RecognitionParser
                 if(row.TryGetProperty("originalOrder",out var orderValue)&&orderValue.ValueKind is not(JsonValueKind.String or JsonValueKind.Null)&&
                    (orderValue.ValueKind!=JsonValueKind.Number||!long.TryParse(order,NumberStyles.None,CultureInfo.InvariantCulture,out _)))
                     throw Error(path+".originalOrder","必须为文字或非负整数序号");
-                rows.Add(new(order,original,name,code,S("spec"),color,type,evidence,raw,unit,S("marker"),issues.Distinct().ToList()));
+                var candidates = new List<QuantityCandidate>();
+                if(row.TryGetProperty("quantityCandidates",out var choices) && choices.ValueKind == JsonValueKind.Array)
+                    foreach(var candidate in choices.EnumerateArray().Take(10))
+                        if(candidate.ValueKind == JsonValueKind.Object && candidate.TryGetProperty("header",out var h) && h.ValueKind == JsonValueKind.String &&
+                           candidate.TryGetProperty("value",out var v) && v.ValueKind == JsonValueKind.String)
+                            candidates.Add(new(h.GetString()!,v.GetString()!));
+                var column = row.TryGetProperty("quantityColumn",out var col) && col.ValueKind == JsonValueKind.String ? col.GetString()! : "";
+                rows.Add(new(order,original,name,code,S("spec"),color,type,evidence,raw,unit,S("marker"),issues.Distinct().ToList())
+                    { RowId = $"row-{rowIndex:D4}", QuantityColumn = column, QuantityCandidates = candidates });
             }
             var totals=new Dictionary<RecognitionProductType,long?>();
             var hasTotals=root.TryGetProperty("sectionTotals",out var t)&&t.ValueKind!=JsonValueKind.Null;
@@ -77,7 +85,7 @@ public static class RecognitionParser
             }
             if(!hasTotals)warnings.Add("分区合计未返回，请对照原图人工核对。");
             warnings.AddRange(Strings(root,"warnings","warnings"));
-            if(!actual)warnings.Add("实发列尚未确认，不能加入进货清单。请包含列标题重新识别，或返回进货清单手动录入。");
+            if(!actual)warnings.Add("没有看清照片中的数量，请填写本次进货数量。加入清单时使用你填写的值。");
             return new(rows,totals,warnings.Distinct().ToList(),actual);
         }
         catch(JsonException){throw Error("$","JSON 无效、嵌套过深或输出截断");}

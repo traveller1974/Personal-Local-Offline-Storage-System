@@ -78,7 +78,7 @@ internal static class RecognitionIntegrationSmoke
             const string locate = """{"output":{"choices":[{"finish_reason":"stop","message":{"content":[{"ocr_result":{"words_info":[{"text":"测试成车（123）","rotate_rect":[200,150,120,24,12]}]}}]}}]}}""";
             var fixture = Path.Combine(run, "worker-fixture.json");
             await File.WriteAllTextAsync(fixture, JsonSerializer.Serialize(new { recognize = envelope, locate }));
-            var originalResult = RecognitionParser.Parse(model) with { InputTokens = 123, OutputTokens = 77 };
+            var originalResult = RecognitionParser.Parse(model) with { InputTokens = 123, OutputTokens = 77, Provider="Qwen",PromptVersion=Recognition.QwenRecognitionService.PromptVersion };
             var original = new CountingOriginal(originalResult);
             var service = new EmbeddedRecognitionService(configuration, original, () => EmbeddedRecognitionPayload.Extract(cache), fixture);
             var result = await service.RecognizeAsync(image);
@@ -122,10 +122,10 @@ internal static class RecognitionIntegrationSmoke
             var draft = new DraftViewModel(stock, DocumentKind.Purchase);
             window = new OcrWindow(owner, draft, Path.Combine(run, "photo-dialog")) { Left = -4000, Top = -4000, WindowStartupLocation = WindowStartupLocation.Manual, ShowInTaskbar = false };
             window.Load(image); window.ApplyCloudResult(result); window.Show(); window.UpdateLayout();
-            Check(window.Rows.Count == 3 && window.Rows.All(r => r.CanReview && !r.Reviewed), "Embedded results use existing exact product matching and still require manual row review");
+            Check(window.Rows.Count == 3 && window.Rows.All(r => r.CanReview && !r.Reviewed), "Embedded results fill valid products and leave optional review markers unset");
             Check(window.Rows[0].Product!.Id == window.Rows[1].Product!.Id && window.Rows[2].RawQuantity == "0", "Duplicate product rows remain separate and zero quantity is visible");
             Check(window.SectionTotalsList.Items.Count == 4 && window.ColumnPicker.Visibility == Visibility.Collapsed, "Main dialog shows all four totals and hides the unused offline column selector");
-            window.ApplyCloudResult(result with { Rows = result.Rows.Select((r, i) => i == 1 ? r with { Type = ProductType.Unknown } : r).ToArray() });
+            window.ApplyCloudResult(result with { Rows = result.Rows.Select((r, i) => i == 1 ? r with { Type = ProductType.Unknown,MaterialCode="",Name="未明确的货品" } : r).ToArray() });
             Check(window.SectionTotalsList.Items.Cast<string>().All(t => t.Contains("当前明细合计 待核对")),
                 "Unknown stock type cannot yield misleading review subtotals by silently dropping a row");
             window.ApplyCloudResult(result);
@@ -143,6 +143,8 @@ internal static class RecognitionIntegrationSmoke
                     Check(Math.Abs(columns[0].ActualWidth / (columns[0].ActualWidth + columns[2].ActualWidth) - .4) < .005 &&
                         window.ImageScroller.ActualHeight > 40 && window.ReviewScroller.ActualHeight > 40,
                         $"Main dialog provides 40/60 image/results space at {size.Item1}x{size.Item2}, layout scale {scale}");
+                    foreach (var evidence in Children<Expander>(window.ReviewRows)) evidence.IsExpanded = true;
+                    window.UpdateLayout();
                     var fields = Children<TextBox>(window.ReviewRows).Where(t => t.DataContext is OcrReviewRow && t.GetBindingExpression(TextBox.TextProperty) is not null).ToList();
                     var paths = fields.Select(t => t.GetBindingExpression(TextBox.TextProperty)!.ParentBinding.Path.Path).ToHashSet();
                     paths.UnionWith(Children<ProductTermBox>(window.ReviewRows).Select(t => t.GetBindingExpression(ProductTermBox.TextProperty)!.ParentBinding.Path.Path));
@@ -157,14 +159,11 @@ internal static class RecognitionIntegrationSmoke
             window.ReviewScroller.ScrollToBottom(); window.UpdateLayout();
             Check(window.ReviewScroller.VerticalOffset > 0 && window.ReviewScroller.ScrollableHeight > 0, "All cards and original field values are reachable by vertical scrolling");
             Capture(window, Path.Combine(output, "main-recognition-last-row.png"));
-            try { window.AddReviewedRows(); throw new Exception("Unreviewed rows must be blocked"); }
-            catch (BusinessException) { Check(draft.Lines.Count == 0 && stock.Products().All(p => p.Total == 0), "Existing review gate blocks adding unreviewed rows without changing stock"); }
+            window.ValidateCurrentForm();Check(draft.Lines.Count==0&&stock.Products().All(p=>p.Total==0),"Valid unreviewed form can import and validation never changes stock");
             window.ApplyCloudResult(result with { ActualQuantityColumn = false });
             foreach (var row in window.Rows) row.Reviewed = true;
-            try { window.AddReviewedRows(); throw new Exception("Unconfirmed actual column must be blocked"); }
-            catch (BusinessException ex) { Check(ex.Message.Contains("实发列") && draft.Lines.Count == 0, "Existing actual-column gate still blocks embedded results"); }
-            window.ApplyCloudResult(result);
-            foreach (var row in window.Rows) row.Reviewed = true;
+            window.ValidateCurrentForm();Check(draft.Lines.Count==0,"Unknown actual column cannot veto valid manual form values");
+            window.ApplyCloudResult(result with{ActualQuantityColumn=false});
             Exception? addFailure = null;
             var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(10) };
             timer.Tick += (_, _) => { timer.Stop(); try { window.AddReviewedRows(); } catch (Exception ex) { addFailure = ex; window.Close(); } };

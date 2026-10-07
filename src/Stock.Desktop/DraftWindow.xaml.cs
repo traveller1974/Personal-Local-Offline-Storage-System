@@ -61,6 +61,6 @@ public partial class DraftWindow : Window
     private void Ocr(object sender,RoutedEventArgs e) => OpenOcr();
     public void OpenOcr()
     {
-        Ui.Try(()=>{var dialog=new OcrWindow(this,ViewModel,TempDirectory);dialog.ShowDialog();ReloadProducts();PhotosNotice.Text=$"已加入{ViewModel.PhotoHashes.Count}张照片的明细。再次修改数量后，请重新勾选“已核对”，最后确认入库。";});
+        Ui.Try(()=>{var dialog=new OcrWindow(this,ViewModel,TempDirectory);dialog.ShowDialog();ReloadProducts();PhotosNotice.Text=$"已加入{ViewModel.PhotoHashes.Count}张照片的明细。数量可继续修改，最后点击“确认入库”。";});
     }
 }

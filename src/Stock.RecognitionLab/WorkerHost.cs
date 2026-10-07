@@ -25,11 +25,12 @@ internal static class WorkerHost
             if (request.Operation is not (RecognitionWorkerProtocol.Recognize or RecognitionWorkerProtocol.Locate))
                 throw new RecognitionException("识别模块操作无效。");
             if (request.Configuration is null) throw new RecognitionException("识别模块缺少配置。");
-            request.Configuration.Validate();
+            var configuration = request.ProviderConfiguration ?? RecognitionConfiguration.From(request.Configuration);
+            configuration.Validate();
             using var client = replayFile is null
                 ? new HttpClient(new SocketsHttpHandler { UseProxy = false, AllowAutoRedirect = false }) { Timeout = Timeout.InfiniteTimeSpan }
                 : ReplayClient(replayFile, request.Operation);
-            var service = new QwenRecognitionService(client, request.Configuration);
+            var service = RecognitionProviderFactory.Create(client, configuration, request.Context);
             reply = request.Operation == RecognitionWorkerProtocol.Recognize
                 ? new(request.RequestId, true, Result: await service.RecognizeAsync(request.ConfirmedImage))
                 : new(request.RequestId, true, Regions: await service.LocateAsync(request.ConfirmedImage));
@@ -37,7 +38,7 @@ internal static class WorkerHost
         catch (Exception ex)
         {
             var message = ex is RecognitionException ? ex.Message : "识别模块无法处理本次请求，图片与核对明细已保留。";
-            var key = request?.Configuration?.ApiKey;
+            var key = request?.ProviderConfiguration?.ApiKey ?? request?.Configuration?.ApiKey;
             if (!string.IsNullOrEmpty(key)) message = message.Replace(key, "[REDACTED]", StringComparison.Ordinal);
             reply = new(request?.RequestId ?? "", false, Error: message);
         }

@@ -8,6 +8,7 @@
     <RecognitionWorkerExe>$(MSBuildThisFileDirectory)../../artifacts/recognition-lab/single-file/Stock.RecognitionLab.exe</RecognitionWorkerExe>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../Stock.RecognitionLab/DetailImagePreparation.cs" Link="DetailImagePreparation.cs" />
     <ProjectReference Include="../Stock.Core/Stock.Core.csproj" />
     <ProjectReference Include="../Stock.Recognition/Stock.Recognition.csproj" />
     <EmbeddedResource Include="$(RecognitionWorkerExe)" LogicalName="Stock.Desktop.Recognition.Stock.RecognitionLab.exe" />

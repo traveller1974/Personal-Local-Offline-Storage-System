@@ -141,7 +141,7 @@ public sealed partial class StockService
         lock(gate)
         {
             using var cn=Connect(); using var tx=cn.BeginTransaction();
-            var existing=ExistingSubmission(cn,tx,submissionKey); if(existing!=null) return existing;
+            var existing=ExistingSubmission(cn,tx,submissionKey); if(existing!=null) { tx.Rollback(); RememberCommittedDocument(existing); return existing; }
             var impacts=BuildImpacts(cn,tx,kind,lines);
             var id=WriteDocument(cn,tx,kind,channel,impacts,submissionKey,inputs:lines);
             var copied=new List<string>();
@@ -154,7 +154,7 @@ public sealed partial class StockService
                     File.Copy(path,target); copied.Add(target);
                     Run(cn,tx,"INSERT INTO Attachment(DocumentId,Path,Metadata) VALUES($id,$p,$m)",("$id",id),("$p",relative),("$m",photoMetadata?.GetValueOrDefault(path)??""));
                 }
-                FaultInjector?.Invoke("BeforeCommit"); tx.Commit(); return id;
+                FaultInjector?.Invoke("BeforeCommit"); tx.Commit(); RememberCommittedDocument(id); return id;
             }
             catch { foreach(var path in copied) { try { File.Delete(path); } catch { } } throw; }
         }

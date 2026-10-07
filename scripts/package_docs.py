@@ -12,7 +12,7 @@ def main():
     dist = ROOT / "dist"
     dist.mkdir(exist_ok=True)
     names = ("使用说明.md", "已知限制.md", "升级计划-v1.1.md", "样单人工基准.json", "验收报告.md", f"发布说明-v{VERSION}.md",
-             "千问识别独立测试.md", "千问识别独立测试验证报告.md")
+             "千问识别独立测试.md", "千问识别独立测试验证报告.md", "识图自动填单架构-v1.2.md")
     for name in names:
         shutil.copy2(ROOT / "docs" / name, dist / name)
     archive = dist / f"LocalStockManager-{VERSION}-docs.zip"

@@ -71,6 +71,12 @@ public sealed class MainViewModel : Observable
 }
 public sealed class DraftLine : Observable
 {
+    public RecognizedRow? RecognitionEvidence { get; init; }
+    public string SourceRowId { get; init; } = Guid.NewGuid().ToString("N");
+    public bool HumanEdited { get; init; }
+    public IReadOnlyDictionary<string,string>? FieldSources { get; init; }
+    public string InvoiceStyle { get; init; } = "";
+    private bool quantityEdited;
     public int PhotoOrder { get; init; }
     public string OriginalOrder { get; init; }="";
     public string Marker { get; init; }="";
@@ -82,7 +88,11 @@ public sealed class DraftLine : Observable
     public bool Reviewed { get=>reviewed;set=>Set(ref reviewed,value&&IntegerInput.TryParse(Quantity,0,out _)); }
     public Product Product { get; }
     private string quantity="1";
-    public string Quantity { get=>quantity; set{if(Set(ref quantity,value)&&PhotoOrder>0)Reviewed=false;} }
+    public string Quantity { get=>quantity; set { if(Set(ref quantity,value))quantityEdited=true; } }
+    public bool HumanConfirmed => Reviewed || HumanEdited && new[]{"Name","Spec","Color","MaterialCode","Type","Product"}
+        .Any(property=>FieldSources?.GetValueOrDefault(property)=="人工填写");
+    public IReadOnlyDictionary<string,string>? FinalFieldSources => quantityEdited
+        ?new Dictionary<string,string>(FieldSources??new Dictionary<string,string>()){["Quantity"]="人工填写"}:FieldSources;
     public DraftLine(Product product,string quantity) { Product=product; this.quantity=quantity; }
 }
 public sealed class DraftViewModel : Observable
@@ -105,15 +115,25 @@ public sealed class DraftViewModel : Observable
     }
     public IReadOnlyList<LineInput> Inputs()
     {
-        if(Lines.Any(l=>l.PhotoOrder>0&&!l.Reviewed))throw new BusinessException("照片明细数量已修改，请重新勾选该行已核对。");
         var inputs=Lines.Select(l=>IntegerInput.TryParse(l.Quantity,Kind==DocumentKind.Purchase?0:1,out var q)?new LineInput(l.Product.Id,q,l.PhotoOrder,l.OriginalOrder,l.Marker,l.RawUnit,l.RawName,string.Join("；",new[]{l.ReviewNote,TotalCorrection}.Where(n=>n.Length>0))):throw new BusinessException($"{l.Product.Display} 的数量必须是有效整数。")).ToList();
-        foreach(var photo in PhotoTotals)foreach(var total in photo.Value.Where(t=>t.Value.HasValue))
-        {
-            var photoLines=Lines.Where(l=>l.PhotoOrder==photo.Key).ToList();var sum=photoLines.Where(l=>l.Product.Type==total.Key).Sum(l=>long.Parse(l.Quantity));
-            if(sum!=total.Value&&string.IsNullOrWhiteSpace(TotalCorrection)&&!photoLines.Any(l=>l.PhotoTotalCorrection.Length>0))throw new BusinessException("照片合计与清单数量不一致。请检查数量；确认照片合计写错了，再填写原因。");
-        }
         return inputs;
     }
     public IReadOnlyList<StockImpact> Preview() { if(Kind==DocumentKind.Sale&&Channel is not("零售" or "批发"))throw new BusinessException("请先选择零售或批发。");return Service.Preview(Kind,Inputs()); }
-    public Task<string> CommitAsync() { var lines=Inputs(); return Task.Run(()=>Service.Commit(Kind,Channel,lines,SubmissionKey,Photos,PhotoMetadata)); }
+    public Task<string> CommitAsync()
+    {
+        var lines=Inputs();
+        var metadata=new Dictionary<string,string>(PhotoMetadata);
+        foreach(var entry in PhotoMetadata)
+        {
+            var node=System.Text.Json.Nodes.JsonNode.Parse(entry.Value)?.AsObject();
+            if(node is null||node["photoOrder"] is null)continue;
+            var photoOrder=node["photoOrder"]!.GetValue<int>();
+            var feedback=Lines.Select((line,index)=>(line,index)).Where(x=>x.line.PhotoOrder==photoOrder&&x.line.RecognitionEvidence is not null)
+                .Select(x=>new RecognitionFeedbackRow(x.line.SourceRowId,x.index+1,x.line.RecognitionEvidence!,x.line.HumanConfirmed,x.line.FinalFieldSources)).ToArray();
+            node["feedback"]=System.Text.Json.JsonSerializer.SerializeToNode(new RecognitionFeedback(Lines.FirstOrDefault(l=>l.PhotoOrder==photoOrder)?.InvoiceStyle??"",feedback));
+            node["finalForm"]=System.Text.Json.JsonSerializer.SerializeToNode(lines.Where(l=>l.PhotoOrder==photoOrder));
+            metadata[entry.Key]=node.ToJsonString();
+        }
+        return Task.Run(()=>Service.Commit(Kind,Channel,lines,SubmissionKey,Photos,metadata));
+    }
 }

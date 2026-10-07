@@ -1,23 +1,23 @@
 <Window x:Class="Stock.RecognitionLab.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
- Style="{StaticResource {x:Type Window}}" Title="千问图像识别 · 独立测试" Width="1360" Height="900" MinWidth="1040" MinHeight="680" WindowStartupLocation="CenterScreen" AllowDrop="True" Drop="Dropped" DragOver="Dragged">
+ Style="{StaticResource {x:Type Window}}" Title="货单图像识别 · 独立测试" Width="1360" Height="900" MinWidth="1040" MinHeight="680" WindowStartupLocation="CenterScreen" AllowDrop="True" Drop="Dropped" DragOver="Dragged">
  <Grid x:Name="Root" Margin="20">
   <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
   <Grid Margin="0,0,0,12"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-   <StackPanel><TextBlock Text="千问图像识别测试" FontSize="26" FontWeight="SemiBold"/><TextBlock Text="先看原始输出，再对照完整字段，最后核对样单差异。" Foreground="#59766E" Margin="0,4,0,0"/></StackPanel>
+   <StackPanel><TextBlock Text="货单图像识别测试" FontSize="26" FontWeight="SemiBold"/><TextBlock Text="选择千问或 DeepSeek，对照照片检查结果。" Foreground="#59766E" Margin="0,4,0,0"/></StackPanel>
    <Border Grid.Column="1" Background="#DFEEE8" CornerRadius="5" Padding="12,8" VerticalAlignment="Center"><TextBlock Text="独立测试 · 不连接库存" Foreground="#087F73"/></Border>
   </Grid>
-  <Expander x:Name="ConnectionSettings" Grid.Row="1" Header="千问连接配置（仅本次会话使用）" IsExpanded="True" Margin="0,0,0,12">
+  <Expander x:Name="ConnectionSettings" Grid.Row="1" Header="识别服务设置（仅本次会话使用）" IsExpanded="True" Margin="0,0,0,12">
    <Border Background="White" Padding="12" BorderBrush="#D5E2DE" BorderThickness="1"><Grid>
     <Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition Width="16"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
     <StackPanel><TextBlock Text="API Key" Margin="0,0,0,4"/><PasswordBox x:Name="ApiKeyBox"/></StackPanel>
     <StackPanel Grid.Column="2"><TextBlock Text="业务空间（可选）" Margin="0,0,0,4"/><TextBox x:Name="WorkspaceBox"/></StackPanel>
-    <StackPanel Grid.Row="1" Grid.ColumnSpan="3" Margin="0,8,0,0"><TextBlock Text="所属地域的原生 DashScope 服务地址 · qwen3.5-ocr" Margin="0,0,0,4"/><TextBox x:Name="EndpointBox" Text="https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation"/></StackPanel>
+    <StackPanel Grid.Row="1" Grid.ColumnSpan="3" Margin="0,8,0,0"><WrapPanel><ComboBox x:Name="ProviderPicker" Width="200" SelectedIndex="0" SelectionChanged="ProviderChanged"><ComboBoxItem Content="千问（qwen3.5-ocr）"/><ComboBoxItem Content="DeepSeek（deepseek-flash）"/></ComboBox><CheckBox x:Name="UseMemory" Content="参考核对记录" Margin="12,0"/><Button Content="载入核对参考" Click="LoadExamples"/></WrapPanel><TextBlock Text="官方服务地址" Margin="0,0,0,4"/><TextBox x:Name="EndpointBox" Text="https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation"/></StackPanel>
    </Grid></Border>
   </Expander>
   <StackPanel x:Name="ImageToolbar" Grid.Row="2" Margin="0,0,0,10">
    <WrapPanel><Button Content="选择图片" Click="Choose"/><ComboBox x:Name="SamplePicker" Width="155" Margin="0,0,8,6" SelectionChanged="SampleChanged"/><Button Content="打开选中样单" Click="OpenSample"/><Button Content="向左旋转" Click="RotateLeft"/><Button Content="向右旋转" Click="RotateRight"/><Button x:Name="CropButton" Content="框选裁剪" Click="EnableCrop"/><Button Content="恢复原图" Click="Reset"/><Button Content="适应图片区域" Click="FitImage"/></WrapPanel>
-   <WrapPanel><CheckBox x:Name="UploadConfirm" Content="已确认显示截图仅含表头、明细和合计，允许上传百炼" VerticalAlignment="Center" Margin="0,0,16,0"/><TextBlock Text="缩放" VerticalAlignment="Center" Margin="0,0,8,0"/><Slider x:Name="Zoom" Minimum="0.02" Maximum="3" Value="0.5" Width="120" VerticalAlignment="Center" ValueChanged="Zoomed"/></WrapPanel>
+   <WrapPanel><CheckBox x:Name="UploadConfirm" Content="已确认只上传表格截图到所选服务" VerticalAlignment="Center" Margin="0,0,16,0"/><TextBlock Text="缩放" VerticalAlignment="Center" Margin="0,0,8,0"/><Slider x:Name="Zoom" Minimum="0.02" Maximum="3" Value="0.5" Width="120" VerticalAlignment="Center" ValueChanged="Zoomed"/></WrapPanel>
   </StackPanel>
   <Grid x:Name="ContentGrid" Grid.Row="3" SizeChanged="ContentAreaChanged">
    <Grid.ColumnDefinitions><ColumnDefinition Width="4*"/><ColumnDefinition Width="14"/><ColumnDefinition Width="6*"/></Grid.ColumnDefinitions>
@@ -65,7 +65,7 @@
   </Grid>
   <Grid Grid.Row="4" Margin="0,12,0,0"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
    <TextBlock x:Name="StatusText" Text="填写连接配置并确认截图后，主动点击识别。每次点击最多发送一次请求。" TextWrapping="Wrap" Margin="0,0,0,8"/>
-   <WrapPanel Grid.Row="1" HorizontalAlignment="Right"><Button x:Name="ReplayButton" Content="载入本地响应" Click="Replay"/><Button x:Name="ExportButton" Content="导出结果与核对意见" Click="Export" IsEnabled="False"/><Button x:Name="CancelButton" Content="取消识别" Click="Cancel" Visibility="Collapsed"/><Button x:Name="RecognizeButton" Content="识别确认的截图" Style="{StaticResource Primary}" Click="Recognize"/></WrapPanel>
+   <WrapPanel Grid.Row="1" HorizontalAlignment="Right"><Button x:Name="ReplayButton" Content="载入本地响应" Click="Replay"/><Button x:Name="CompareButton" Content="比较两种模型" Click="CompareModels"/><Button x:Name="ExportButton" Content="导出结果与核对意见" Click="Export" IsEnabled="False"/><Button x:Name="CancelButton" Content="取消识别" Click="Cancel" Visibility="Collapsed"/><Button x:Name="RecognizeButton" Content="识别确认的截图" Style="{StaticResource Primary}" Click="Recognize"/></WrapPanel>
   </Grid>
  </Grid>
 </Window>

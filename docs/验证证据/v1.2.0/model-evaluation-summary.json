@@ -1,0 +1,61 @@
+{
+  "date": "2026-10-07",
+  "realQwenRequests": 4,
+  "realDeepSeekRequests": 0,
+  "userStockDatabaseOpened": false,
+  "confirmedTableCropsOnly": true,
+  "groundTruthMissingFields": 39,
+  "endToEndAutomationValidated": false,
+  "defaultProvider": "Qwen",
+  "deepSeekStatus": "用户将在新版设置中保存密钥后继续真实测试",
+  "runs": [
+    {
+      "sample": "sample-1",
+      "provider": "Qwen",
+      "variant": "improved",
+      "validParsedResult": true,
+      "expectedRows": 17,
+      "returnedRows": 8,
+      "fieldDifferences": 104,
+      "pendingHumanFields": 33,
+      "criticalFieldsAllCorrect": false,
+      "failureStage": null
+    },
+    {
+      "sample": "sample-1",
+      "provider": "Qwen",
+      "variant": "original",
+      "validParsedResult": true,
+      "expectedRows": 17,
+      "returnedRows": 8,
+      "fieldDifferences": 97,
+      "pendingHumanFields": 33,
+      "criticalFieldsAllCorrect": false,
+      "failureStage": null
+    },
+    {
+      "sample": "sample-2",
+      "provider": "Qwen",
+      "variant": "improved",
+      "validParsedResult": false,
+      "expectedRows": 4,
+      "returnedRows": null,
+      "fieldDifferences": null,
+      "pendingHumanFields": null,
+      "criticalFieldsAllCorrect": false,
+      "failureStage": "ModelParse"
+    },
+    {
+      "sample": "sample-2",
+      "provider": "Qwen",
+      "variant": "original",
+      "validParsedResult": true,
+      "expectedRows": 4,
+      "returnedRows": 3,
+      "fieldDifferences": 27,
+      "pendingHumanFields": 6,
+      "criticalFieldsAllCorrect": false,
+      "failureStage": null
+    }
+  ]
+}

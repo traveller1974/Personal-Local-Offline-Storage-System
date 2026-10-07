@@ -68,14 +68,14 @@ internal static class ReviewInteractionSmoke
             check(row.Reviewed && reviewed.IsChecked == true, "Space key marks the row reviewed through the actual checkbox key handlers");
             Click((Button)quantity.FindName("Plus")); Click((Button)quantity.FindName("Plus")); Click((Button)quantity.FindName("Minus"));
             check(row.Quantity == "3" && input.Text == "3" && quantity.GetBindingExpression(QuantityBox.ValueProperty) is not null, "Repeated plus and minus retain the binding and change the real row quantity");
-            check(!row.Reviewed && reviewed.IsChecked == false && row.ReviewStatus.Contains("重新核对"), "Quantity buttons revoke review and explain that another check is needed");
+            check(row.Reviewed && reviewed.IsChecked == true && row.CanReview, "Quantity buttons preserve the review marker and valid manual edits");
             input.Focus(); input.SelectAll(); input.Text = "8";
             check(row.Quantity == "8" && quantity.Value == "8" && row.RawQuantity == "2", "Typing a quantity after button clicks updates the row and retains original recognition");
             row.Quantity = "6";
             check(input.Text == "6", "Source updates still reach the input after repeated quantity clicks");
             foreach (var invalid in new[] { "", "-1", "1.5", "2147483648" })
             {
-                input.Text = invalid; Click(reviewed);
+                input.Text = invalid; row.Reviewed=false; Click(reviewed);
                 check(!row.Reviewed && reviewed.IsChecked == false && reviewed.IsEnabled && window.StatusText.Text.Contains("数量") && input.IsKeyboardFocused,
                     "Invalid quantity gives an actionable message and focuses the input: " + invalid);
             }
@@ -118,20 +118,19 @@ internal static class ReviewInteractionSmoke
             window.ApplyCloudResult(Result(source with { RawUnit = "", RawQuantity = "3" }, 3)); window.UpdateLayout(); row = window.Rows.Single();
             reviewed = Named<CheckBox>(window, "ReviewedCheck"); Click(reviewed);
             var confirmUnit = Named<CheckBox>(window, "ConfirmUnit");
-            check(!row.Reviewed && row.UnitConfirmationRequired && confirmUnit.IsVisible && confirmUnit.IsKeyboardFocused && row.Warning.Contains("单位"),
-                "Missing invoice unit directs the user to a visible human unit confirmation");
-            Click(confirmUnit); Click(reviewed);
+            check(row.Reviewed && row.UnitConfirmationRequired && confirmUnit.IsVisible && row.Warning.Contains("单位"),
+                "Missing invoice unit is visible but cannot veto manual review");
+            Click(confirmUnit);
             check(row.UnitConfirmed && row.CanReview && row.Reviewed && row.RawUnit == "" && row.SourceRawUnit == "" && row.UnitReviewNote.Contains("人工确认"),
                 "Explicit human unit confirmation unlocks review without silently changing the original code or quantity");
             Named<ComboBox>(window, "ProductTypePicker").SetCurrentValue(ComboBox.SelectedValueProperty, ProductType.Battery);
-            check(!row.UnitConfirmed && !row.Reviewed && row.Warning.Contains("清空颜色"), "Changing product type revokes unit confirmation and explains forbidden battery color");
+            check(!row.UnitConfirmed && !row.CanReview && row.Warning.Contains("清空颜色"), "Changing product type validates the product and explains forbidden battery color");
             window.ApplyCloudResult(Result(source with { RawUnit = "PAA", RawQuantity = "3" }, 3)); window.UpdateLayout(); row = window.Rows.Single();
             Click(Named<CheckBox>(window, "ConfirmUnit")); Click(Named<CheckBox>(window, "ReviewedCheck"));
             check(row.Reviewed && row.RawUnit == "PAA" && row.Quantity == "3", "Unexpected unit can be confirmed while preserving original code and entered quantity");
             ((TextBox)Named<QuantityBox>(window, "ActualQuantity").FindName("Input")).Text = "4"; Click(Named<CheckBox>(window, "ReviewedCheck"));
-            try { window.AddReviewedRows(); throw new Exception("Unit note must not bypass totals"); }
-            catch (BusinessException) { check(window.TotalCorrectionPanel.IsExpanded && draft.ViewModel.Lines.Count == 0, "Unit confirmation does not bypass a mismatched photo total"); }
-            ((TextBox)Named<QuantityBox>(window, "ActualQuantity").FindName("Input")).Text = "3"; Click(Named<CheckBox>(window, "ReviewedCheck"));
+            window.ValidateCurrentForm();check(draft.ViewModel.Lines.Count==0,"A mismatched photo total is advisory and does not write stock");
+            ((TextBox)Named<QuantityBox>(window, "ActualQuantity").FindName("Input")).Text = "3"; row.Reviewed=true;
 
             foreach (var size in new[] { (1360d, 900d), (1040d, 680d) })
                 foreach (var scale in new[] { 1d, 1.25, 1.5 })
@@ -162,12 +161,11 @@ internal static class ReviewInteractionSmoke
             }
             draft.Activate(); draft.UpdateLayout(); var imported = draft.ViewModel.Lines.Single();
             var draftQty = Children<QuantityBox>(draft.DraftGrid).Single(); Click((Button)draftQty.FindName("Plus"));
-            check(imported.Quantity == "4" && !imported.Reviewed && draftQty.GetBindingExpression(QuantityBox.ValueProperty) is not null,
-                "Draft quantity plus updates the imported line, keeps binding and revokes review");
+            check(imported.Quantity == "4" && imported.Reviewed && draftQty.GetBindingExpression(QuantityBox.ValueProperty) is not null,
+                "Draft quantity edit keeps binding and preserves the optional review marker");
             var draftReview = Named<CheckBox>(draft, "DraftReviewedCheck"); Click(draftReview);
-            check(imported.Reviewed && draftReview.IsChecked == true, "Actual draft checkbox can recheck an edited imported quantity");
-            try { draft.ViewModel.Preview(); throw new Exception("Unit note must not bypass changed draft total"); }
-            catch (BusinessException) { check(stock.Products().All(p => p.Total == 0), "Draft total check still blocks after unit confirmation and another review"); }
+            check(!imported.Reviewed && draftReview.IsChecked == false, "Draft review marker remains optional and clickable");
+            draft.ViewModel.Preview();check(stock.Products().All(p=>p.Total==0),"Valid edited quantity previews despite total mismatch and unchecked marker");
             draft.ViewModel.TotalCorrection = "逐行核实，照片合计漏记1辆，应为4辆。";
             draft.ViewModel.Preview(); capture(draft, Path.Combine(output, "draft-reviewed.png"));
             draft.Hide();
@@ -182,6 +180,8 @@ internal static class ReviewInteractionSmoke
             check(document.Lines.Single().ReviewNote.Contains("原单识别单位：PAA") && document.Lines.Single().ReviewNote.Contains("合计漏记"),
                 "Saved document retains unit confirmation and separate total correction explanations");
             stock.ValidateIntegrity();
+            check(stock.CorrectionMemory().Single().Final.Quantity==4&&stock.CorrectionMemory().Single().Original.RawQuantity=="3",
+                "Correction memory reads the final committed draft quantity and keeps original extraction evidence");
         }
         finally { window.Close(); draft.Close(); Ui.AutomatedTestError = oldError; }
     }

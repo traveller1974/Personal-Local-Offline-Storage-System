@@ -1,0 +1,10 @@
+{
+  "version": "1.2.0",
+  "embeddedRecognitionEnabled": true,
+  "recognitionPayloadSha256": "7d6c389e1f703e225697402261b30b3b963136ef09a4424dc4999c83c81dee1c",
+  "installerSha256": "bbe5a2485fe9ff783885a5d369f7651f66e3bf9d7d461d624db95f5afd986bf1",
+  "installer": "D:\\workspace\\codex工作区\\local-stock-manager\\dist\\LocalStockManager-1.2.0-win-x64-Setup.exe",
+  "publish": "D:\\workspace\\codex工作区\\local-stock-manager\\artifacts\\publish-1.2.0-true",
+  "integrationChecks": 122,
+  "databaseSchema": 2
+}

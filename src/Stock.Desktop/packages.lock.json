@@ -62,7 +62,8 @@
       "stock.core": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.Data.Sqlite": "[10.0.0, )"
+          "Microsoft.Data.Sqlite": "[10.0.0, )",
+          "Stock.Recognition": "[1.1.4, )"
         }
       },
       "stock.recognition": {

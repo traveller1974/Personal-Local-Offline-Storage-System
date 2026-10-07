@@ -9,6 +9,8 @@ namespace Stock.Desktop;
 internal sealed class EmbeddedRecognitionService(QwenConfiguration configuration, IRecognitionService original,
     Func<string>? resolveExecutable = null, string? replayFile = null) : IRecognitionService
 {
+    public Recognition.RecognitionConfiguration? ProviderConfiguration { get; init; }
+    public Recognition.RecognitionContext? Context { get; init; }
     private async Task<Recognition.RecognitionWorkerClient?> PrepareAsync(CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
@@ -17,7 +19,7 @@ internal sealed class EmbeddedRecognitionService(QwenConfiguration configuration
             // Extracting and checking the self-contained executable must not block the WPF thread.
             var path = await Task.Run(resolveExecutable ?? (() => EmbeddedRecognitionPayload.Extract()), token);
             token.ThrowIfCancellationRequested();
-            return new(path, new(configuration.ApiKey, configuration.Endpoint, configuration.Workspace)) { ReplayFile = replayFile };
+            return new(path, new(configuration.ApiKey, configuration.Endpoint, configuration.Workspace)) { ReplayFile = replayFile, ProviderConfiguration = ProviderConfiguration, Context = Context };
         }
         // Only local preparation failures can use the original provider, before any request is started.
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return null; }
@@ -43,11 +45,7 @@ internal sealed class EmbeddedRecognitionService(QwenConfiguration configuration
         catch (Recognition.RecognitionException ex) { throw new BusinessException(ex.Message); }
     }
 
-    internal static RecognitionResult Map(Recognition.RecognitionResult result) => new(
-        result.Rows.Select(r => new RecognizedRow(r.OriginalOrder, r.RawName, r.Name, r.MaterialCode, r.Spec, r.Color,
-            MapType(r.Type), r.SectionEvidence, r.RawQuantity, r.RawUnit, r.Marker, r.Issues.ToArray())).ToArray(),
-        result.SectionTotals.ToDictionary(p => MapType(p.Key), p => p.Value), result.Warnings.ToArray(),
-        result.ActualQuantityColumn, result.Elapsed, result.InputTokens, result.OutputTokens);
+    internal static RecognitionResult Map(Recognition.RecognitionResult result) => RecognitionMapping.Map(result);
 
     private static ProductType MapType(Recognition.RecognitionProductType type) => type switch
     {

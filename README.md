@@ -1,57 +1,59 @@
-# 本地库存管理 1.1.4
+# 本地库存管理 1.2.0
 
-Windows 11 x64、WPF / .NET 10、SQLite。库存本机保存；照片识别使用阿里云百炼 `qwen3.5-ocr`，只上传用户确认的表格截图。手工业务与本机离线备用识别可断网使用。
+Windows 11 x64、WPF / .NET 10、SQLite。库存保存到本机；手工业务和备用OCR可断网使用。联网识别可选千问 `qwen3.5-ocr` 或官方 DeepSeek `deepseek-flash`，只上传确认后的截图。
 
-功能升级依据见 [升级计划](docs/升级计划-v1.1.md)，本版变更见 [1.1.4 发布说明](docs/发布说明-v1.1.4.md)，操作说明见 [使用说明](docs/使用说明.md)，验证结果和未验证边界见 [验收报告](docs/验收报告.md) 与 [已知限制](docs/已知限制.md)。1.1.4安装包、SHA-256、说明书及报告在本机 `dist` 目录。历史1.1.2见 [GitHub发布页](https://github.com/traveller1974/Personal-Local-Offline-Storage-System/releases/tag/local-stock-manager-v1.1.2)。
+本版取消OCR对人工填写的限制：数量列不明、单位缺失、照片合计不同都只是提示。“已核对”为可选标记，入库使用最终清单。保留原进货步骤和名称、规格、颜色词条，图片约40%、结果约60%；增加本机纠错记忆和DeepSeek设置。
 
-安装包只更新程序目录，保留已有数据库、照片、密钥设置和备份；安装前请关闭软件。首次启动会先完整备份，再迁移数据库，库存余额及已有单据内容保留；三年历史保留规则继续按升级计划执行。
+千问真实样单未通过自动填单验收；DeepSeek待用户配置密钥后继续真实测试。默认保留千问，识别仅作建议，最后仍需用户确认入库。
 
-## 主要功能
+- [使用说明](docs/使用说明.md)
+- [本版发布说明](docs/发布说明-v1.2.0.md)
+- [验收报告与真实测试结果](docs/验收报告.md)
+- [识图辅助填单架构](docs/识图自动填单架构-v1.2.md)
+- [独立识图程序](docs/千问识别独立测试.md)
+- [已知限制](docs/已知限制.md)
 
-- 类型、名称、完整规格、颜色、物料编码共同区分库存。标识随单保存。
-- 名称、规格、颜色输入关键词即可选择已有词条，留空可展开候选，也可保留新值；手工进货单可直接新建零库存货品。
-- 人工核对逐项指出问题，选择已有货品后确认填入资料，数量支持直接输入和加减，“已核对”支持点击及空格。
-- 多张照片与重复货品保留独立原行，库存及作废按货品合计校验。
-- 本机检测表格、四角调整、透视校正、截图确认、云端识别、逐行核对和最终入库。
-- 框选裁剪先预览、再应用或取消；显示最新处理图并保持比例。识别缺字段时保留待核对行，实发列标志兼容明确的布尔字符串；无法确认时保留明细并阻止加入清单。
-- SQL 组合筛选、分页、分类型与单位汇总、自选列及流式 Excel 全部结果导出。
-- v1→v2 保护备份与事务迁移，旧资料待补全，历史快照不改写。
-- 滚动三年结转维护，保留当前库存；v1/v2 备份恢复，升级及卸载保留数据。
+安装包、独立EXE、SHA-256和说明文档位于本机 `dist`。安装前关闭主程序；升级保留已有库存、照片、加密设置和备份。1.2.0库存数据库仍为schema v2，不改写历史快照。独立纠错数据库为schema v1。
 
-API Key 在软件设置中填写，由 Windows 当前用户加密保存，不进入源码、库存备份、日志或安装包。服务地址和密钥地域需以百炼控制台为准。用户已确认识图模块可用；本版沿用该模块，主要修复人工核对与数量操作。开发测试使用隔离数据、合成图片和模拟响应。
+## 功能
 
-## 开发与验证
+- 类型、名称、完整规格、颜色、编码共同区分库存。标记随单保存。
+- 名称、规格、颜色支持关键词候选或填写新值；手工进货可新建零库存货品。
+- 识图辅助选品和填数量，支持补漏行、移除多余行、直接修改。照片原文可展开对照。
+- 成功入库后记录修正。相关货品参考最多3条，永远不带入过去的数量；可关闭学习、停用错误记录。
+- 多照片和重复货品保留独立原行。库存记账、作废、调拨继续事务校验，不允许负库存。
+- 组合筛选、分页、分类汇总、流式Excel导出及取消。
+- v1→v2保护备份和迁移、滚动三年结转维护、备份恢复；升级及卸载保留数据。
 
-千问图像识别新增了独立单文件 EXE：`dist/Stock.RecognitionLab.exe`，使用说明及确认后升级方式见 [千问识别独立测试](docs/千问识别独立测试.md)。运行 `scripts/build_recognition_lab.ps1 -SmokeTest` 可构建和离线验证，再用 `scripts/start_recognition_lab.ps1` 启动真实样单测试。该程序不连接库存数据库。
+API Key在“设置与备份”填写，按服务分别由Windows当前用户加密，不进源码、库存备份、日志或安装包。核对记录是本机辅助资料，不训练云模型。
 
-用户已确认识图模块可用，1.1.4升级包内置并启用被确认的同一份识图EXE，保留旧识别实现；进货识别弹窗采用40%／60%布局并显示全部字段。用户继续按原进货步骤操作。本地构建的源码开关仍默认使用旧后台，交付升级包明确使用 `-UseEmbeddedRecognition`。本机实际安装需由用户关闭软件后运行升级包更新。
+## 构建与验证
 
-SDK 版本在 `global.json`，NuGet 和本机备用 OCR 依赖均锁定。本轮打包已恢复本地工具与构建缓存；新环境首次构建使用 `-Bootstrap` 恢复 `tools`、`ocr/.venv`。软件使用不需要开发环境。
+SDK在 `global.json`，NuGet及本机OCR依赖锁定。新环境用 `-Bootstrap` 恢复 `tools`、`ocr/.venv`；普通用户不需要开发环境。
 
 ```powershell
 .\scripts\build_recognition_lab.ps1 -SmokeTest
 .\scripts\verify_recognition_integration.ps1
-.\scripts\build.ps1 -Bootstrap -UseEmbeddedRecognition -AppVersion 1.1.4
-.\scripts\build.ps1 -SkipOcrBuild -UseEmbeddedRecognition -AppVersion 1.1.4
-.\scripts\verify.ps1 -ApplicationPath artifacts/publish-1.1.4-true/LocalStockManager.exe -OutputDirectory artifacts/v1.1.4/desktop-smoke
+.\scripts\build.ps1 -Bootstrap -UseEmbeddedRecognition -AppVersion 1.2.0
+.\scripts\verify.ps1 -ApplicationPath artifacts/publish-1.2.0-true/LocalStockManager.exe -OutputDirectory artifacts/v1.2.0/desktop-smoke -RecognitionIntegration
 ```
 
-正常构建运行核心回归、20万行 SQL/汇总/分页/导出与取消测试、本机 OCR 样本及错误协议和识图模块接入验证，生成自包含发布、NSIS 安装包和 SHA-256。`-SkipOcrBuild` 只复用未变更的已测试本机 OCR 工作程序。默认构建保留旧识别后台；只有真实测试经用户确认后的升级构建增加 `-UseEmbeddedRecognition`，并使用已测试的 `dist/Stock.RecognitionLab.exe`。
+`-UseEmbeddedRecognition`嵌入已生成且哈希一致的 `dist/Stock.RecognitionLab.exe`，不会重建它。普通构建默认用进程内入口；两个入口共享服务和解析实现。软件测试通过不等于真实识别准确度通过。
+
+构建包含核心回归、20万行查询/汇总/分页/导出与取消检查、本机OCR及协议、隐藏识图后台和完整进货流程，生成自包含发布、NSIS安装包和SHA-256。`-SkipOcrBuild`仅复用未变化且已验证的本机OCR程序。
 
 ```powershell
-dotnet test tests/Stock.Tests/Stock.Tests.csproj -c Release --filter 'Category=Performance'
-.\scripts\install_upgrade_test.ps1
-dotnet run --project tests/Stock.DesktopHarness/Stock.DesktopHarness.csproj -c Release -- (Get-Location).Path
+.\scripts\install_patch_test.ps1 -BaselinePublish artifacts/baseline-1.1.4 -BaselineVersion 1.1.4 -TargetVersion 1.2.0 -TargetPublish artifacts/publish-1.2.0-true -EmbeddedRecognition
 ```
 
-安装升级测试用独立注册表、快捷方式、安装目录和测试数据。`install_upgrade_test.ps1` 覆盖 v1迁移，须保留 `artifacts/v1.1/v1-test-setup.exe`；新克隆需先构建隔离的 v1 基准包。1.1.4使用 `install_patch_test.ps1 -BaselinePublish artifacts/publish-1.1.3-true -BaselineVersion 1.1.3 -TargetVersion 1.1.4 -TargetPublish artifacts/publish-1.1.4-true -EmbeddedRecognition` 覆盖安装、重复安装、卸载及已安装的识图后台，逐文件比较数据库、照片、DPAPI设置与备份的SHA-256。内置后台测试使用较短的测试目录，避免Windows子进程工作目录长度限制。失败测试仅在明确指定 `-CleanupPreviousTest` 且验证注册路径、项目目录与安装标识一致时清理。当前精简证据在 `docs/验证证据/v1.1.4`，历史证据继续保留。
+升级测试使用独立注册表、快捷方式、安装目录和数据，逐文件比较数据库、照片、DPAPI设置、模型选择、纠错文件和备份。证据保存在 `docs/验证证据/v1.2.0`；历史证据保留。实际显示器DPI、干净电脑和实体摄像头尚未覆盖。
 
-人工样单基准在 `docs/样单人工基准.json`，`null` 代表模糊完整字段待人工确认。开发者可用 `scripts/evaluate_samples.py` 比较本地保存的识别结果，不会自动上传或读取密钥。模拟接口测试不能代替真实样单验收。
+人工样单基准 `docs/样单人工基准.json` 的 `null`是待确认字段，不能算正确。`scripts/evaluate_samples.py`读取本地结果，不上传图片或读取密钥。显式开发入口 `--evaluate-confirmed-samples` 用于已授权真实测试，只加载加密设置、不打开库存数据库；普通启动不会运行它。
 
-## 数据与源码
+## 数据与模块
 
-默认数据目录为 `%LOCALAPPDATA%\LocalStockManager\Data`；密钥设置与保护备份位于其旁。数据库使用 `PRAGMA user_version=2`。未知结构和更高版本会拒绝打开，不重建空库掩盖错误。SQLite 事务内验证、更新余额；三年维护核对结转与保留流水后才提交。
+默认数据目录 `%LOCALAPPDATA%\LocalStockManager\Data`，设置和保护备份位于旁边。未知或更高库存结构版本拒绝打开，不重建空库。
 
-`src/Stock.Core` 包含识别协议、本地校验、事务记账、迁移、SQL 查询、流式导出和备份维护。`src/Stock.Desktop` 包含 WPF 核对、图片处理、密钥加密和用户流程。`ocr` 为用户主动选择的本机识别备用组件。第三方许可见 `THIRD-PARTY-NOTICES.md` 和 `licenses`。
+`Stock.Recognition`负责共享接口、解析和协议；`Stock.RecognitionLab`是独立EXE；`Stock.Core`负责业务、纠错匹配和维护；`Stock.Desktop`负责原用户流程。`ocr`为主动选择的本机备用组件。第三方许可见 `THIRD-PARTY-NOTICES.md` 和 `licenses`。
 
-仓库不提交用户数据库、照片、密钥、开发工具和构建缓存。
+仓库不提交真实数据库、照片、密钥、模型原始响应、开发工具或构建缓存。

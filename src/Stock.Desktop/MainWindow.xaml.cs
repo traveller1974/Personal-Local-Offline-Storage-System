@@ -1,4 +1,5 @@
 using System.Windows;
+using System.IO;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -55,12 +56,49 @@ public partial class MainWindow : Window
     private void Settings(object sender,RoutedEventArgs e)=>Ui.Try(()=>
     {
         var w=Ui.Dialog(this,"照片识别设置与数据备份",820,850);var p=new StackPanel{Margin=new(26)};
-        var configuration=QwenSettings.Load(ViewModel.Service);p.Children.Add(Ui.Text("照片识别：填写阿里云百炼设置",true));var keyBox=new PasswordBox{Password=configuration.ApiKey};var endpoint=new TextBox{Text=configuration.Endpoint};var workspace=new TextBox{Text=configuration.Workspace};Ui.Field(p,"阿里云百炼密钥（API Key，填写后加密保存）",keyBox);Ui.Field(p,"服务地址（从百炼控制台复制，与密钥属于同一地区）",endpoint);Ui.Field(p,"业务空间（控制台没有要求时可留空）",workspace);
-        p.Children.Add(Ui.Button("保存识别设置",()=>{QwenSettings.Save(ViewModel.Service,new(keyBox.Password,endpoint.Text.Trim(),workspace.Text.Trim()));ViewModel.Notice="百炼设置已加密保存，识别时才发送请求。";},true));p.Children.Add(Ui.Text("点击照片识别才会上传你确认的表格截图。阿里云百炼按识别用量收费，请使用同一地区和业务空间的密钥与地址。库存和手动填单可以断网使用。"));
-        p.Children.Add(Ui.Text("本机数据与备份",true));p.Children.Add(Ui.Text("数据目录：\n"+ViewModel.Service.DataDirectory));p.Children.Add(Ui.Text(ViewModel.RetentionText));p.Children.Add(Ui.Text("备份包含库存、历史单据和货单照片，识别密钥需另行配置。软件升级和首次清理旧记录时，会在旁边的 ProtectionBackups 文件夹保存保护备份，请自行保管。"));
+        var configuration=RecognitionSettings.Load(ViewModel.Service);p.Children.Add(Ui.Text("照片识别",true));
+        var provider=new ComboBox{ItemsSource=new[]{"千问（阿里云百炼）","DeepSeek（官方）"},SelectedIndex=configuration.Provider==Stock.Recognition.RecognitionProviderKind.DeepSeek?1:0};
+        var keyBox=new PasswordBox{Password=configuration.ApiKey};var endpoint=new TextBox{Text=configuration.Endpoint};var workspace=new TextBox{Text=configuration.Workspace};
+        Ui.Field(p,"识别服务",provider);Ui.Field(p,"密钥（API Key，加密保存在这台电脑）",keyBox);Ui.Field(p,"官方服务地址",endpoint);Ui.Field(p,"百炼业务空间（可留空，DeepSeek不用填写）",workspace);
+        var selectedProvider=configuration.Provider;
+        var sessionConfigurations=new Dictionary<Stock.Recognition.RecognitionProviderKind,Stock.Recognition.RecognitionConfiguration>{{selectedProvider,configuration}};
+        provider.SelectionChanged+=(_,_)=>Ui.Try(()=>
+        {
+            sessionConfigurations[selectedProvider]=new(selectedProvider,keyBox.Password,endpoint.Text.Trim(),workspace.Text.Trim());
+            selectedProvider=provider.SelectedIndex==1?Stock.Recognition.RecognitionProviderKind.DeepSeek:Stock.Recognition.RecognitionProviderKind.Qwen;
+            var saved=sessionConfigurations.GetValueOrDefault(selectedProvider)??RecognitionSettings.Load(ViewModel.Service,selectedProvider);
+            keyBox.Password=saved.ApiKey;endpoint.Text=saved.Endpoint;workspace.Text=saved.Workspace;
+        });
+        p.Children.Add(Ui.Button("保存识别设置",()=>{RecognitionSettings.Save(ViewModel.Service,new(provider.SelectedIndex==1?Stock.Recognition.RecognitionProviderKind.DeepSeek:Stock.Recognition.RecognitionProviderKind.Qwen,keyBox.Password,endpoint.Text.Trim(),workspace.Text.Trim()));ViewModel.Notice="识别设置已加密保存。";},true));
+        p.Children.Add(Ui.Text("点击识别后，会把确认的表格截图发给所选服务。服务按用量收费；手动填写可断网使用。"));
+        p.Children.Add(Ui.Text("记住核对结果",true));
+        var learning=new CheckBox{Content="成功入库后记住人工修正，供以后填写参考",IsChecked=ViewModel.Service.LearningEnabled};
+        learning.Click+=(_,_)=>Ui.Try(()=>ViewModel.Service.LearningEnabled=learning.IsChecked==true);p.Children.Add(learning);
+        p.Children.Add(Ui.Text("识别相似货单时，最多参考3条相关货品修正。数量不会照抄旧单。"));
+        p.Children.Add(Ui.Button("查看或停用核对记录",()=>ShowCorrectionMemory(w)));
+        p.Children.Add(Ui.Button("导出核对参考给独立测试程序",()=>
+        {
+            var dialog=new SaveFileDialog{Filter="核对参考|*.json",FileName="货品核对参考.json"};if(dialog.ShowDialog(w)!=true)return;
+            var terms=ViewModel.Service.CorrectionMemory().Where(e=>e.HumanConfirmed&&e.Enabled).Select(e=>e.Original.Name);
+            File.WriteAllText(dialog.FileName,System.Text.Json.JsonSerializer.Serialize(ViewModel.Service.RelevantCorrectionExamples(terms),Stock.Recognition.RecognitionJson.Options));
+            ViewModel.Notice="核对参考已导出，独立测试程序可以载入。";
+        }));
+        p.Children.Add(Ui.Button("补记已入库的修正",()=>{ViewModel.Service.RebuildRecognitionMemory();ViewModel.Notice=ViewModel.Service.MemoryNotice??"核对记录已补记。";}));
+        p.Children.Add(Ui.Text("本机数据与备份",true));p.Children.Add(Ui.Text("数据目录：\n"+ViewModel.Service.DataDirectory));p.Children.Add(Ui.Text(ViewModel.RetentionText));p.Children.Add(Ui.Text("备份包含库存、历史单据、货单照片和核对记录，识别密钥需另行配置。软件升级和首次清理旧记录时，会在旁边的 ProtectionBackups 文件夹保存保护备份，请自行保管。"));
         var busy=false;w.Closing+=(_,ev)=>{if(busy)ev.Cancel=true;};var backup=new Button{Content="保存备份",Style=(Style)FindResource("Primary")};var restore=new Button{Content="恢复备份"};
         backup.Click+=async(_,_)=>{var d=new SaveFileDialog{Filter="库存备份 (*.stockbackup)|*.stockbackup",DefaultExt=".stockbackup",FileName=$"库存备份_{DateTime.Now:yyyyMMdd_HHmmss}.stockbackup"};if(d.ShowDialog(w)!=true)return;busy=true;backup.IsEnabled=restore.IsEnabled=false;await Ui.TryAsync(async()=>{await ViewModel.BackupAsync(d.FileName);ViewModel.Notice="备份已保存";});busy=false;backup.IsEnabled=restore.IsEnabled=true;};
         restore.Click+=async(_,_)=>{var d=new OpenFileDialog{Filter="库存备份 (*.stockbackup)|*.stockbackup"};if(d.ShowDialog(w)!=true)return;if(MessageBox.Show(w,"恢复会替换当前本机全部库存与历史记录。请确认已保存需要的当前备份。\n是否恢复选中的备份？","确认恢复",MessageBoxButton.YesNo,MessageBoxImage.Warning)!=MessageBoxResult.Yes)return;busy=true;backup.IsEnabled=restore.IsEnabled=false;await Ui.TryAsync(async()=>{await ViewModel.RestoreAsync(d.FileName);ViewModel.Notice="备份恢复成功，三年清理已完成";Tabs.IsEnabled=true;w.Close();});busy=false;backup.IsEnabled=restore.IsEnabled=true;};
         p.Children.Add(Ui.Row(backup,restore));p.Children.Add(Ui.Text("每台电脑独立保存数据，无账号、无同步。卸载默认保留数据。"));p.Children.Add(Ui.Button("关闭",()=>w.Close()));w.Content=new ScrollViewer{Content=p,VerticalScrollBarVisibility=ScrollBarVisibility.Auto};w.ShowDialog();
     });
+    private void ShowCorrectionMemory(Window owner)
+    {
+        var window=Ui.Dialog(owner,"以前的核对记录",850,650);var panel=new StackPanel{Margin=new(22)};
+        panel.Children.Add(Ui.Text("发现记录有误时，可以停用。停用后不会用来自动填写。",true));
+        foreach(var entry in ViewModel.Service.CorrectionMemory().Take(500))
+        {
+            var enabled=new CheckBox{Content=new TextBlock{Text=entry.Display,TextWrapping=TextWrapping.Wrap},IsChecked=entry.Enabled,Margin=new(0,8,0,8)};
+            enabled.Click+=(_,_)=>Ui.Try(()=>ViewModel.Service.SetCorrectionEnabled(entry.DocumentId,entry.RowId,enabled.IsChecked==true));panel.Children.Add(enabled);
+        }
+        panel.Children.Add(Ui.Button("关闭",()=>window.Close()));window.Content=new ScrollViewer{Content=panel,VerticalScrollBarVisibility=ScrollBarVisibility.Auto};window.ShowDialog();
+    }
 }

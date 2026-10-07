@@ -8,14 +8,15 @@ using System.Text.RegularExpressions;
 
 namespace Stock.Recognition;
 
-public sealed partial class QwenRecognitionService(HttpClient client, QwenConfiguration configuration) : IRecognitionService
+public sealed partial class QwenRecognitionService(HttpClient client, QwenConfiguration configuration) : IRecognitionProvider
 {
     public const string Model = "qwen3.5-ocr";
-    public const string PromptVersion = "stock-invoice-v1.1.2";
+    public const string PromptVersion = "stock-invoice-v1.2.0";
     public static string PromptSha256 => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(Prompt)));
     public TimeSpan Timeout { get; init; } = TimeSpan.FromSeconds(90);
     public RecognitionDiagnostic? LastDiagnostic { get; private set; }
     public Action<RecognitionDiagnostic>? DiagnosticSink { get; init; }
+    public RecognitionContext Context { get; init; } = new();
 
     private sealed class Call(bool locate, string endpoint)
     {
@@ -41,8 +42,9 @@ public sealed partial class QwenRecognitionService(HttpClient client, QwenConfig
     {
         call.Watch.Stop();
         var diagnostic = new RecognitionDiagnostic(call.StartedAt, call.Locate ? "Locate" : "Recognize", Model,
-            PromptVersion, PromptSha256, Redact(call.Endpoint), call.ImageHash, call.Watch.Elapsed, call.Status,
-            call.Raw, call.Text, call.Input, call.Output, call.Stage, call.Error, call.Result, call.Regions);
+            PromptVersion, Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(Context.Prompt))), Redact(call.Endpoint), call.ImageHash, call.Watch.Elapsed, call.Status,
+            call.Raw, call.Text, call.Input, call.Output, call.Stage, call.Error, call.Result, call.Regions)
+            { CorrectionExampleCount = Math.Min(3,Context.Examples?.Count??0) };
         LastDiagnostic = diagnostic;
         // A caller's optional recorder must not turn a successful recognition into a failure.
         try { DiagnosticSink?.Invoke(diagnostic); } catch { }
@@ -61,7 +63,7 @@ public sealed partial class QwenRecognitionService(HttpClient client, QwenConfig
             throw new RecognitionException("请选择 JPG 或 PNG 截图。未发送请求。");
         var mime = extension.Equals(".png", StringComparison.OrdinalIgnoreCase) ? "image/png" : "image/jpeg";
         var content = new List<object> { new { image = $"data:{mime};base64,{Convert.ToBase64String(bytes)}", min_pixels = 3072, max_pixels = 15680000, enable_rotate = false } };
-        if (!call.Locate) content.Add(new { text = Prompt });
+        if (!call.Locate) content.Add(new { text = Context.Prompt });
         var body = new
         {
             model = Model, input = new { messages = new[] { new { role = "user", content } } },
@@ -150,7 +152,7 @@ public sealed partial class QwenRecognitionService(HttpClient client, QwenConfig
             call.Stage = "ModelParse";
             var parsed = RecognitionParser.Parse(call.Text);
             cancellationToken.ThrowIfCancellationRequested();
-            call.Result = parsed with { Elapsed = call.Watch.Elapsed, InputTokens = call.Input, OutputTokens = call.Output };
+            call.Result = parsed with { Elapsed = call.Watch.Elapsed, InputTokens = call.Input, OutputTokens = call.Output, Provider = "Qwen", PromptVersion = PromptVersion };
             call.Stage = "Completed";
             return call.Result;
         }

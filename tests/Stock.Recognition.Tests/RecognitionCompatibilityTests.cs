@@ -28,7 +28,7 @@ public sealed class RecognitionCompatibilityTests
     {
         var sample=QwenTests.Sample();if(nullValue)sample["actualQuantityColumn"]=null;else sample.Remove("actualQuantityColumn");
         var result=RecognitionParser.Parse(sample.ToJsonString());Assert.False(result.ActualQuantityColumn);Assert.Equal(3,result.Rows.Count);
-        Assert.Contains(result.Warnings,w=>w.Contains("不能加入"));
+        Assert.Contains(result.Warnings,w=>w.Contains("使用你填写的值"));
     }
     [Fact] public void IntegerNumbersAndStringTotalsAreAcceptedWithoutChangingOrder()
     {
@@ -94,7 +94,7 @@ public sealed class RecognitionCompatibilityTests
         Assert.Equal(result.Rows[0].Name,result.Rows[1].Name);Assert.Equal("1",result.Rows[0].OriginalOrder);Assert.Equal("2",result.Rows[1].OriginalOrder);
         if(json.StartsWith('"'))Assert.Contains(result.Warnings,w=>w.Contains("兼容转换"));
         else Assert.DoesNotContain(result.Warnings,w=>w.Contains("兼容转换")||w.Contains("格式异常"));
-        if(!expected)Assert.Contains(result.Warnings,w=>w.Contains("不能加入"));
+        if(!expected)Assert.Contains(result.Warnings,w=>w.Contains("使用你填写的值"));
     }
     [Theory]
     [InlineData("null")] [InlineData("0")] [InlineData("1")] [InlineData("-1")] [InlineData("1.0")]
@@ -107,7 +107,7 @@ public sealed class RecognitionCompatibilityTests
         sample["rows"]![1]!.AsObject().Remove("rawQuantity");
         var result=RecognitionParser.Parse(sample.ToJsonString());Assert.False(result.ActualQuantityColumn);Assert.Equal(3,result.Rows.Count);
         Assert.Equal("",result.Rows[1].RawQuantity);Assert.Equal("0",result.Rows[2].RawQuantity);Assert.Equal(5,result.SectionTotals[RecognitionProductType.Vehicle]);
-        Assert.Contains(result.Warnings,w=>w.Contains("不能加入"));
+        Assert.Contains(result.Warnings,w=>w.Contains("使用你填写的值"));
         Assert.Contains(result.Warnings,w=>w.Contains(json=="null"?"缺失":"格式异常"));
     }
     [Theory] [InlineData("\"private-value-must-stay-private\"")] [InlineData("{\"private-field\":\"private-value-must-stay-private\"}")]

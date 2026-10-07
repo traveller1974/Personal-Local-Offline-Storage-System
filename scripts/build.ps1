@@ -1,4 +1,4 @@
-param([switch]$Bootstrap,[string]$DownloadProxy='',[switch]$SkipOcrBuild,[switch]$UseEmbeddedRecognition,[ValidatePattern('^\d+\.\d+\.\d+$')][string]$AppVersion='1.1.4')
+param([switch]$Bootstrap,[string]$DownloadProxy='',[switch]$SkipOcrBuild,[switch]$UseEmbeddedRecognition,[ValidatePattern('^\d+\.\d+\.\d+$')][string]$AppVersion='1.2.0')
 $ErrorActionPreference='Stop'
 $projectRoot=Split-Path $PSScriptRoot -Parent
 $env:DOTNET_CLI_HOME=Join-Path $projectRoot 'tools/dotnet-home'
@@ -7,10 +7,10 @@ $env:DOTNET_NOLOGO='1'
 $env:PYINSTALLER_CONFIG_DIR=Join-Path $projectRoot 'tools/pyinstaller-cache'
 Set-Location -LiteralPath $projectRoot
 if($Bootstrap){ & (Join-Path $PSScriptRoot 'bootstrap.ps1') -DownloadProxy $DownloadProxy }
-# An enabled upgrade embeds the exact standalone EXE reviewed by the user, without rebuilding it.
+# An enabled upgrade embeds the exact verified standalone EXE without rebuilding it.
 if($UseEmbeddedRecognition){
  $workerPayload=Join-Path $projectRoot 'dist/Stock.RecognitionLab.exe'
- if(-not(Test-Path -LiteralPath $workerPayload)){throw 'Please build and review the standalone recognition EXE before generating an enabled upgrade.'}
+ if(-not(Test-Path -LiteralPath $workerPayload)){throw 'Please build and verify the standalone recognition EXE before generating an enabled upgrade.'}
  $payloadChecksum=$workerPayload+'.sha256'
  if(-not(Test-Path -LiteralPath $payloadChecksum)){throw 'The reviewed recognition EXE checksum is missing.'}
  $reviewedPayloadHash=(Get-Content -Raw -LiteralPath $payloadChecksum).Trim().Split(' ',[StringSplitOptions]::RemoveEmptyEntries)[0].ToLowerInvariant()
@@ -60,7 +60,7 @@ Get-ChildItem -LiteralPath $publish -Filter 'opencv_videoio_ffmpeg*.dll' -File -
 }
 & $python scripts/collect_licenses.py
 if($LASTEXITCODE -ne 0){throw 'License collection failed'}
-Copy-Item -LiteralPath docs/使用说明.md,docs/已知限制.md,THIRD-PARTY-NOTICES.md -Destination $publish -Force
+Copy-Item -LiteralPath docs/使用说明.md,docs/已知限制.md,docs/千问识别独立测试.md,docs/发布说明-v1.2.0.md,docs/识图自动填单架构-v1.2.md,THIRD-PARTY-NOTICES.md -Destination $publish -Force
 Copy-Item -LiteralPath licenses -Destination $publish -Recurse -Force
 New-Item -ItemType Directory -Force dist | Out-Null
 $installer=Join-Path $projectRoot "dist/LocalStockManager-$AppVersion-win-x64-Setup.exe"

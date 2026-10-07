@@ -1,4 +1,5 @@
 using Stock.Core;
+using System.Runtime.CompilerServices;
 
 namespace Stock.Desktop;
 
@@ -9,13 +10,23 @@ public sealed class OcrReviewRow : Observable
     private string name, spec, quantity, color = "", code = "", marker = "", rawUnit = "";
     private ProductType type;
     private Product? product;
-    private bool reviewed, unitConfirmed, reviewChanged, matching;
+    private bool reviewed, unitConfirmed, matching, applyingAutomatic;
+    private readonly HashSet<string> humanFields=[];
+    private readonly HashSet<string> catalogFields=[];
+    public string RowId { get; } = Guid.NewGuid().ToString("N");
+    public bool HumanEdited { get; private set; }
+    public bool AutomaticallyFilled { get; private set; }
+    public string MatchSource { get; private set; } = "识别结果";
+    public IReadOnlyDictionary<string,string> FieldSources => new[]{"Name","Spec","Color","MaterialCode","Type","Quantity","RawUnit","Product"}
+        .ToDictionary(property=>property,property=>humanFields.Contains(property)?"人工填写":catalogFields.Contains(property)?MatchSource:"照片识别");
     public InvoiceRow Source { get; }
     public RecognizedRow? CloudSource { get; }
     public bool Cloud => CloudSource is not null;
     public string OriginalOrder => CloudSource?.OriginalOrder ?? "";
     public string RawName => CloudSource?.RawName ?? Source.Name;
     public string RawQuantity => CloudSource?.RawQuantity ?? Source.RawQuantity;
+    public string QuantityColumnHelp => CloudSource is null ? "" : "所取数量列："+(CloudSource.QuantityColumn.Length==0?"未看清":CloudSource.QuantityColumn)+
+        (CloudSource.QuantityCandidates.Count==0?"":"；其他数量列："+string.Join("；",CloudSource.QuantityCandidates.Select(c=>$"{c.Header} {c.Value}")));
     public string SourceRawUnit => CloudSource?.RawUnit ?? "";
     public string SourceSpec => CloudSource?.Spec ?? Source.Spec;
     public string SourceColor => CloudSource?.Color ?? "";
@@ -43,17 +54,17 @@ public sealed class OcrReviewRow : Observable
         set
         {
             Set(ref reviewed, value && CanReview);
-            if (reviewed) reviewChanged = false;
             Changed(nameof(ReviewStatus));
         }
     }
     public string ExpectedRawUnit => Type switch { ProductType.Vehicle or ProductType.Charger => "PC", ProductType.Battery => "PAA", ProductType.Accessory => "Z1", _ => "" };
-    public bool UnitConfirmationRequired => Cloud && Type != ProductType.Unknown && RawUnit != ExpectedRawUnit;
+    public bool UnitConfirmationRequired => Cloud && Type != ProductType.Unknown && !UnitMatches;
+    private bool UnitMatches => Type != ProductType.Unknown && (RawUnit == ExpectedRawUnit || RawUnit == Unit);
     public bool UnitConfirmed { get => unitConfirmed; set { if (Set(ref unitConfirmed, value)) Invalidate(); } }
     public string UnitConfirmationText => $"我已对照照片确认：这里填写的数量按“{Unit}”计，不需要换算。";
-    public string RawUnitHelp => !Cloud ? "离线识别时，请对照照片确认数量使用的单位。" :
+    public string RawUnitHelp => !Cloud ? "请按所选货品的单位填写数量。" :
         Type == ProductType.Unknown ? "先选择货品类型，再确认照片上的单位。" :
-        UnitConfirmationRequired ? $"照片单位识别为“{Empty(RawUnit)}”，所选货品按“{Unit}”入库。请对照照片确认下方说明；需要换算时，先手动改好本次进货数量。" :
+        UnitConfirmationRequired ? $"照片单位为“{Empty(RawUnit)}”。本次进货数量按“{Unit}”填写，需要换算时直接改数量。这条提示不影响加入清单。" :
         $"照片单位已匹配，本次进货数量按“{Unit}”计。";
     public string UnitReviewNote => Cloud && (UnitConfirmationRequired && UnitConfirmed || SourceRawUnit != RawUnit) ?
         $"原单识别单位：{Empty(SourceRawUnit)}；核对单位：{Empty(RawUnit)}；人工确认数量按{Unit}计，不换算。" : "";
@@ -77,22 +88,22 @@ public sealed class OcrReviewRow : Observable
                 problems.Add(new("Color", "电池和充电器不记录颜色，请清空颜色。"));
             if (!IntegerInput.TryParse(Quantity, 0, out _))
                 problems.Add(new("Quantity", $"请填写本次进货数量，只能填0到{Rules.MaxQuantity}的整数。"));
-            if (UnitConfirmationRequired && !UnitConfirmed)
-                problems.Add(new("Unit", $"照片单位与“{Unit}”的常用代码不同或为空，请对照照片，确认下方单位说明；需要换算时先手动改好数量。"));
             return problems;
         }
     }
     public bool CanReview => ReviewProblems.Count == 0;
-    public string Warning => string.Join(Environment.NewLine, ReviewProblems.Select(p => "• " + p.Message));
-    public string ReviewStatus => Reviewed ? "已核对，可以加入进货清单。" : reviewChanged ? "内容已修改，请重新核对。" : CanReview ? "请对照照片检查货品和数量，再勾选“已核对”。" : "请先处理下方提示，再勾选“已核对”。";
+    public string Warning => string.Join(Environment.NewLine, ReviewProblems.Select(p => "• " + p.Message)
+        .Concat(UnitConfirmationRequired && !UnitConfirmed ? ["• 请按所选货品的单位检查数量，必要时直接修改。"] : []));
+    public string ReviewStatus => !CanReview ? "请补齐下方提示的内容。" : Reviewed ? "已核对。加入清单时使用当前填写的值。" :
+        AutomaticallyFilled && !HumanEdited ? $"已自动填写（{MatchSource}）。可直接加入清单，也可修改。" : "可以加入清单；“已核对”可用来标记检查过的行。";
 
     public OcrReviewRow(InvoiceRow source, IReadOnlyList<Product> products)
-    { Source = source; Products = products; name = source.Name; spec = source.Spec; quantity = source.RawQuantity; Rematch(); }
+    { Source = source; Products = products; name = source.Name; spec = source.Spec; quantity = source.RawQuantity; applyingAutomatic=true;Rematch();applyingAutomatic=false; }
     public OcrReviewRow(RecognizedRow source, IReadOnlyList<Product> products)
     {
         CloudSource = source; Source = new(source.Name, source.Spec, source.RawQuantity, 0, [], "");
         Products = products.Where(p => p.Complete).ToList(); name = source.Name; spec = source.Spec; quantity = source.RawQuantity;
-        type = source.Type; color = source.Color; code = source.MaterialCode; marker = source.Marker; rawUnit = source.RawUnit; Rematch();
+        type = source.Type; color = source.Color; code = source.MaterialCode; marker = source.Marker; rawUnit = source.RawUnit; applyingAutomatic=true;Rematch();applyingAutomatic=false;
     }
     public IReadOnlyList<(string Field, string Label, string Current, string Selected)> IdentityDifferences(Product p)
     {
@@ -105,10 +116,9 @@ public sealed class OcrReviewRow : Observable
         if (Cloud && Different(MaterialCode, p.MaterialCode ?? "")) result.Add(("MaterialCode", "货品编码", MaterialCode, p.MaterialCode ?? ""));
         return result;
     }
-    private void Invalidate(bool clearUnit = false)
+    private void Invalidate(bool clearUnit = false,[CallerMemberName]string field="")
     {
-        if (reviewed) reviewChanged = true;
-        Set(ref reviewed, false, nameof(Reviewed));
+        if (!applyingAutomatic) { HumanEdited = true; AutomaticallyFilled = false; humanFields.Add(field); }
         if (clearUnit) Set(ref unitConfirmed, false, nameof(UnitConfirmed));
         NotifyReview();
     }
@@ -117,13 +127,28 @@ public sealed class OcrReviewRow : Observable
         foreach (var property in new[] { nameof(CanReview), nameof(ReviewProblems), nameof(Warning), nameof(ReviewStatus), nameof(UnitConfirmationRequired), nameof(UnitConfirmationText), nameof(RawUnitHelp), nameof(UnitReviewNote) }) Changed(property);
     }
     private bool IdentityMatches(Product p) => IdentityDifferences(p).Count == 0;
-    private void Rematch(bool clearUnit = false) { Product = Products.FirstOrDefault(IdentityMatches); Invalidate(clearUnit); }
+    private void Rematch(bool clearUnit = false,[CallerMemberName]string field="") { var matches=Products.Where(IdentityMatches).ToArray(); Product = matches.Length==1?matches[0]:null; Invalidate(clearUnit,field); }
     public void RefreshProducts(IReadOnlyList<Product> products, Product? chosen = null)
     {
         Products = Cloud ? products.Where(p => p.Complete).ToList() : products;
         Changed(nameof(Products));
-        Product = chosen ?? Products.FirstOrDefault(IdentityMatches);
+        var matches=Products.Where(IdentityMatches).ToArray(); Product = chosen ?? (matches.Length==1?matches[0]:null);
         NotifyReview();
+    }
+    internal void ApplyAutomaticProduct(Product selected, string source, bool quantityReliable)
+    {
+        applyingAutomatic=true;
+        try
+        {
+            if(name!=selected.Name)catalogFields.Add("Name");if(spec!=selected.Spec)catalogFields.Add("Spec");if(color!=(selected.Color??""))catalogFields.Add("Color");
+            if(code!=(selected.MaterialCode??""))catalogFields.Add("MaterialCode");if(type!=selected.Type)catalogFields.Add("Type");catalogFields.Add("Product");
+            type=selected.Type; name=selected.Name; spec=selected.Spec; color=selected.Color??""; code=selected.MaterialCode??"";
+            Product=selected; MatchSource=source; AutomaticallyFilled=quantityReliable && CanReview && UnitMatches;
+            HumanEdited=false;
+            foreach(var property in new[]{nameof(Type),nameof(Name),nameof(Spec),nameof(Color),nameof(MaterialCode),nameof(Unit)})Changed(property);
+            NotifyReview();
+        }
+        finally { applyingAutomatic=false; }
     }
     private static string Empty(string text) => text.Length == 0 ? "未填写" : text;
 }

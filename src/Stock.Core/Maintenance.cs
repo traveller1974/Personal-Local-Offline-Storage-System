@@ -108,6 +108,7 @@ public sealed partial class StockService
                         var relative=r.GetString(0); var dest=Path.Combine(temp,relative); Directory.CreateDirectory(Path.GetDirectoryName(dest)!); File.Copy(ManagedPath(relative),dest);
                     }
                 }
+                BackupRecognitionMemory(Path.Combine(temp,"recognition-memory.db"));
                 var files=Directory.GetFiles(temp,"*",SearchOption.AllDirectories).ToDictionary(f=>Path.GetRelativePath(temp,f).Replace('\\','/'),Hash);
                 File.WriteAllText(Path.Combine(temp,"manifest.json"),JsonSerializer.Serialize(new BackupManifest(2,files)));
                 ZipFile.CreateFromDirectory(temp,pending,CompressionLevel.Optimal,false); File.Move(pending,destination,true);

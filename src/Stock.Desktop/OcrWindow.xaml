@@ -20,14 +20,15 @@
    <Border Background="#E5ECE8" CornerRadius="6"><ScrollViewer x:Name="ImageScroller" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"><Grid x:Name="ImageHost" HorizontalAlignment="Left" VerticalAlignment="Top" MouseLeftButtonDown="CropStart" MouseMove="CropMove" MouseLeftButtonUp="CropEnd" LostMouseCapture="CropCaptureLost"><Image x:Name="PhotoImage" Stretch="Uniform"/><Canvas x:Name="Overlay" IsHitTestVisible="False"><Polygon x:Name="CornerOutline" Stroke="#E58B34" StrokeThickness="3" Fill="#20E58B34" Visibility="Collapsed"/><Rectangle x:Name="Selection" Stroke="#E58B34" StrokeThickness="2" Fill="#30E58B34" Visibility="Collapsed"/><Rectangle x:Name="RowHighlight" Stroke="#087F73" StrokeThickness="3" Fill="#20087F73" Visibility="Collapsed"/></Canvas></Grid></ScrollViewer></Border>
    <DockPanel x:Name="ReviewPanel" Grid.Column="2">
     <StackPanel DockPanel.Dock="Top">
-     <TextBlock Text="先选货品，再改数量，最后勾选“已核对”" FontSize="18" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,8"/>
+     <TextBlock Text="核对货品和数量，填写完成后加入清单" FontSize="18" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,8"/>
      <ScrollViewer MaxHeight="130" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,0,0,8"><StackPanel>
       <TextBlock x:Name="ResultSummaryText" Text="识别后，在这里检查每行货品和本次进货数量。" TextWrapping="Wrap"/>
       <ItemsControl x:Name="SectionTotalsList" Margin="0,6,0,0"><ItemsControl.ItemTemplate><DataTemplate><TextBlock Text="{Binding}" TextWrapping="Wrap" Margin="0,2"/></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
       <TextBlock x:Name="ResultWarningsText" TextWrapping="Wrap" Foreground="#A95A15" Margin="0,6,0,0"/>
      </StackPanel></ScrollViewer>
      <ComboBox x:Name="ColumnPicker" DisplayMemberPath="Label" SelectionChanged="ColumnChanged" Margin="0,0,0,8" ToolTip="请选择照片上写着“实发”的数量列"/>
-     <Expander x:Name="TotalCorrectionPanel" Header="照片上的合计写错了？在这里填写原因" Margin="0,0,0,8"><StackPanel><TextBlock Text="先检查每行数量。确认照片上的合计有误时，再填写原因。" Style="{StaticResource FieldLabel}"/><TextBox x:Name="TotalOverride" TextWrapping="Wrap" ToolTip="例如：照片合计写成10，逐行核实应为12"/></StackPanel></Expander>
+     <WrapPanel><Button Content="补充一行" Click="AddManualRow"/><Button Content="查看未填完整的行" Click="NextProblem"/></WrapPanel>
+     <Expander x:Name="TotalCorrectionPanel" Header="数量说明（可留空）" Margin="0,0,0,8"><StackPanel><TextBlock Text="照片合计仅供对照。入库使用当前清单数量，需要时可备注原因。" Style="{StaticResource FieldLabel}"/><TextBox x:Name="TotalOverride" TextWrapping="Wrap" ToolTip="例如：照片合计写成10，逐行核实应为12"/></StackPanel></Expander>
      <Expander Header="技术详情" Margin="0,0,0,8"><TextBlock x:Name="TechnicalDetails" Text="识别后可查看耗时和用量。" TextWrapping="Wrap"/></Expander>
     </StackPanel>
     <ScrollViewer x:Name="ReviewScroller" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
@@ -50,6 +51,7 @@
         <DockPanel><TextBlock Text="{Binding Unit}" DockPanel.Dock="Right" FontSize="17" VerticalAlignment="Center" Margin="12,0,0,0"/><q:QuantityBox x:Name="ActualQuantity" Minimum="0" Value="{Binding Quantity,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"/></DockPanel>
         <TextBlock Text="点数字直接修改，也可以点－或＋。最终确认入库时，以这里的数量为准。" TextWrapping="Wrap" Margin="0,8,0,6"/>
         <TextBlock Text="照片识别的数量（只供对照）" Style="{StaticResource FieldLabel}"/><TextBox Text="{Binding RawQuantity,Mode=OneWay}" Style="{StaticResource OriginalValue}"/>
+        <TextBlock Text="{Binding QuantityColumnHelp}" TextWrapping="Wrap" Foreground="#688276" Margin="0,5,0,0"/>
        </StackPanel></Border>
        <TextBlock Text="照片单位（识别不准时可修改）" Style="{StaticResource FieldLabel}"/><TextBox x:Name="InvoiceUnit" Text="{Binding RawUnit,UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FieldValue}"/>
        <TextBlock Text="{Binding RawUnitHelp}" TextWrapping="Wrap" Margin="0,5,0,8"/>
@@ -57,8 +59,8 @@
        <TextBlock Text="标记 / 备注（可留空）" Style="{StaticResource FieldLabel}"/><TextBox Text="{Binding Marker,UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FieldValue}" Margin="0,0,0,10"/>
        <TextBlock Text="{Binding ReviewStatus}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,6"/>
        <TextBlock Text="{Binding Warning}" Foreground="#A95A15" TextWrapping="Wrap" Margin="0,0,0,10"/>
-       <WrapPanel><CheckBox x:Name="ReviewedCheck" Content="已核对" IsChecked="{Binding Reviewed,Mode=OneWay}" Click="ReviewClicked" Margin="0,0,12,8"/><Button Content="移除此行" Tag="{Binding}" Click="RemoveRow" Padding="10,5" Margin="0,0,8,8"/><Button Content="在照片中查找（另行付费）" Tag="{Binding}" Click="Locate" Padding="8,5" Margin="0,0,8,8"/></WrapPanel>
-       <Expander Header="照片识别原文（用于对照）" IsExpanded="True" Margin="0,8,0,10"><StackPanel Margin="0,8,0,0">
+       <WrapPanel><CheckBox x:Name="ReviewedCheck" Content="已核对" ToolTip="可选标记，方便记住检查过的行；不勾选也可以加入清单。" IsChecked="{Binding Reviewed,Mode=OneWay}" Click="ReviewClicked" Margin="0,0,12,8"/><Button Content="移除此行" Tag="{Binding}" Click="RemoveRow" Padding="10,5" Margin="0,0,8,8"/><Button Content="在照片中查找（另行付费）" Tag="{Binding}" Click="Locate" Padding="8,5" Margin="0,0,8,8"/></WrapPanel>
+       <Expander Header="照片识别原文（点击展开对照）" IsExpanded="False" Margin="0,8,0,10"><StackPanel Margin="0,8,0,0">
         <TextBlock Text="照片行号" Style="{StaticResource FieldLabel}"/><TextBox Text="{Binding OriginalOrder,Mode=OneWay}" Style="{StaticResource OriginalValue}" Margin="0,0,0,6"/>
         <TextBlock Text="照片上的货品名称（含括号编码）" Style="{StaticResource FieldLabel}"/><TextBox Text="{Binding RawName,Mode=OneWay}" Style="{StaticResource OriginalValue}" Margin="0,0,0,6"/>
         <TextBlock Text="照片原规格 / 型号" Style="{StaticResource FieldLabel}"/><TextBox Text="{Binding SourceSpec,Mode=OneWay}" Style="{StaticResource OriginalValue}" Margin="0,0,0,6"/>

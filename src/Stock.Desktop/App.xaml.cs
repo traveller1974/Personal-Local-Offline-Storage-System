@@ -15,6 +15,13 @@ public partial class App : Application
         DispatcherUnhandledException += (_, args) => { Ui.Error(args.Exception); args.Handled = true; };
         try
         {
+            if(e.Args.Length==3&&e.Args[0]=="--evaluate-confirmed-samples")
+            {
+                ShutdownMode=ShutdownMode.OnExplicitShutdown;
+                try{await RealModelEvaluation.RunAsync(Path.GetFullPath(e.Args[1]),Path.GetFullPath(e.Args[2]));Shutdown(0);}
+                catch(Exception ex){Directory.CreateDirectory(e.Args[2]);File.WriteAllText(Path.Combine(e.Args[2],"failure.txt"),ex is BusinessException or Stock.Recognition.RecognitionException?ex.Message:"真实样单测试未完成，请检查配置。");Shutdown(1);}
+                return;
+            }
             if(e.Args.Length==2&&e.Args[0]=="--review-test")
             {ShutdownMode=ShutdownMode.OnExplicitShutdown;await ReviewInteractionSmoke.RunStandaloneAsync(Path.GetFullPath(e.Args[1]));Shutdown(Environment.ExitCode);return;}
             if(e.Args.Length==3&&e.Args[0]=="--recognition-integration-test"&&e.Args[2] is "legacy" or "embedded")
@@ -31,7 +38,7 @@ public partial class App : Application
             var directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "LocalStockManager", "Data");
             instance = new Mutex(true, @"Local\LocalStockManager", out var created);
             if (!created) { MessageBox.Show("库存管理已经打开。请使用现有窗口。", "本地库存管理"); Shutdown(); return; }
-            var service = await Task.Run(() => { var s = new StockService(directory); s.Maintain(); return s; });
+            var service = await Task.Run(() => { var s = new StockService(directory); s.Maintain(); s.RebuildRecognitionMemory(); return s; });
             MainWindow = new MainWindow(new MainViewModel(service)); MainWindow.Show();
         }
         catch (Exception ex) { Ui.Error(ex); Shutdown(1); }

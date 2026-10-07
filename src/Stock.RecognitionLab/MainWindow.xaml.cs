@@ -28,6 +28,10 @@ public partial class MainWindow : Window
     private RunImage? capturedImage;
     private EvaluationReport? comparison;
     private string captureSource = "";
+    private readonly Dictionary<RecognitionProviderKind,RecognitionConfiguration> configurations=[];
+    private RecognitionProviderKind selectedProvider;
+    private IReadOnlyList<CorrectionExample> examples=[];
+    private readonly List<RecognitionDiagnostic> comparisonRuns=[];
     public ObservableCollection<RowCard> Rows { get; } = [];
 
     public MainWindow()
@@ -91,6 +95,7 @@ public partial class MainWindow : Window
     }
     private void ClearCapture()
     {
+        comparisonRuns.Clear();
         capture = null; comparison = null; capturedImage = null; captureSource = ""; Rows.Clear();
         ModelTextBox.Clear(); ResponseBox.Clear(); ParsedBox.Clear(); TotalsList.ItemsSource = null;
         ResultSummary.Text = "识别后会显示全部行级字段和单据合计。"; WarningsText.Text = "";
@@ -175,9 +180,10 @@ public partial class MainWindow : Window
             if (busy) return;
             if (!image.HasImage) throw new RecognitionException("请先选择图片。");
             if (UploadConfirm.IsChecked != true) throw new RecognitionException("请先确认显示截图的上传范围。");
-            var configuration = new QwenConfiguration(ApiKeyBox.Password, EndpointBox.Text.Trim(), WorkspaceBox.Text.Trim());
+            var configuration = CurrentConfiguration();
             configuration.Validate();
-            await CaptureAsync(new QwenRecognitionService(liveClient, configuration), "real-call");
+            var context=ContextFor(configuration);
+            await CaptureAsync(RecognitionProviderFactory.Create(liveClient, configuration,context), "real-call");
         }
         catch (Exception ex) { if (!closed) StatusText.Text = SafeMessage(ex); }
     }
@@ -197,15 +203,15 @@ public partial class MainWindow : Window
         catch (Exception ex) { if (!closed) StatusText.Text = SafeMessage(ex); }
     }
 
-    internal async Task CaptureAsync(QwenRecognitionService service, string source)
+    internal async Task CaptureAsync(IRecognitionProvider service, string source, CancellationToken parentToken=default)
     {
         var requestGeneration = ++generation;
         ClearCapture(); captureSource = source;
         capturedImage = new(image.UploadPath, image.OriginalName, image.OriginalHash, image.Preview!.PixelWidth, image.Preview.PixelHeight, image.Steps.ToArray());
-        using var cts = new CancellationTokenSource(); cancellation = cts;
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(parentToken); cancellation = cts;
         ConnectionSettings.IsExpanded = false;
         SetBusy(true);
-        StatusText.Text = source == "real-call" ? "正在调用百炼 qwen3.5-ocr，最多等待90秒；可取消，没有自动重试。" : "正在回放本地响应，没有发送网络请求。";
+        StatusText.Text = source == "real-call" ? "正在调用所选识别服务，最多等待90秒；可取消。" : "正在回放本地响应，没有发送网络请求。";
         try { await service.RecognizeAsync(capturedImage.Path, cts.Token); }
         catch (Exception) when (service.LastDiagnostic is not null) { /* The completed diagnostic carries the precise failure stage. */ }
         finally
@@ -217,7 +223,7 @@ public partial class MainWindow : Window
     }
     private void SetBusy(bool value)
     {
-        busy = value; ConnectionSettings.IsEnabled = ImageToolbar.IsEnabled = ReplayButton.IsEnabled = RecognizeButton.IsEnabled = !value;
+        busy = value; ConnectionSettings.IsEnabled = ImageToolbar.IsEnabled = ReplayButton.IsEnabled = RecognizeButton.IsEnabled = CompareButton.IsEnabled = !value;
         ExportButton.IsEnabled = !value && capture is not null;
         CancelButton.Visibility = value ? Visibility.Visible : Visibility.Collapsed;
     }
@@ -261,7 +267,8 @@ public partial class MainWindow : Window
             new("物料编码", V(row.MaterialCode)), new("完整规格", V(row.Spec)), new("颜色", V(row.Color)),
             new("类型", $"{TypeLabel(row.Type)}（{row.Type}）"), new("分区依据", V(row.SectionEvidence)),
             new("原始实发数量", V(row.RawQuantity)), new("原单位", V(row.RawUnit)), new("标识", V(row.Marker)),
-            new("问题提示", row.Issues.Count == 0 ? "无" : string.Join("\n", row.Issues))]);
+            new("问题提示", row.Issues.Count == 0 ? "无" : string.Join("\n", row.Issues)),new("所取数量列",V(row.QuantityColumn)),
+            new("其他数量列",row.QuantityCandidates.Count==0?"（未返回）":string.Join("；",row.QuantityCandidates.Select(c=>$"{c.Header}：{c.Value}")))]);
     }
     private void SampleChanged(object sender, SelectionChangedEventArgs e) { if (ComparisonSummary is not null) RefreshComparison(); }
     private void RefreshComparison()
@@ -283,6 +290,7 @@ public partial class MainWindow : Window
         if (dialog.ShowDialog(this) != true) return;
         var decision = (ReviewDecision.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "待核对";
         var output = RunExporter.Export(dialog.FolderName, capture, capturedImage, captureSource, comparison, decision, ReviewNotes.Text);
+        if(comparisonRuns.Count>0)File.WriteAllText(Path.Combine(output,"model-comparison.json"),JsonSerializer.Serialize(comparisonRuns,RecognitionJson.Options));
         StatusText.Text = "已导出本次截图、原始响应、解析结果、对比与人工意见：" + output;
     });
     private void Dragged(object sender, DragEventArgs e) { e.Effects = !busy && e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Copy : DragDropEffects.None; e.Handled = true; }
@@ -293,6 +301,54 @@ public partial class MainWindow : Window
         LoadImage(paths[0]); SamplePicker.SelectedIndex = 0;
     });
     internal LabImage TestImage => image;
+    private RecognitionConfiguration CurrentConfiguration()=>new(selectedProvider,ApiKeyBox.Password,EndpointBox.Text.Trim(),WorkspaceBox.Text.Trim());
+    private void ProviderChanged(object sender,SelectionChangedEventArgs e)
+    {
+        if(ApiKeyBox is null||EndpointBox is null||WorkspaceBox is null)return;
+        configurations[selectedProvider]=CurrentConfiguration();selectedProvider=ProviderPicker.SelectedIndex==1?RecognitionProviderKind.DeepSeek:RecognitionProviderKind.Qwen;
+        var configuration=configurations.GetValueOrDefault(selectedProvider)??new(selectedProvider,"",selectedProvider==RecognitionProviderKind.DeepSeek?RecognitionConfiguration.DeepSeekEndpoint:QwenConfiguration.Beijing);
+        ApiKeyBox.Password=configuration.ApiKey;EndpointBox.Text=configuration.Endpoint;WorkspaceBox.Text=configuration.Workspace;
+    }
+    private void LoadExamples(object sender,RoutedEventArgs e)=>Try(()=>
+    {
+        var dialog=new OpenFileDialog{Filter="核对参考|*.json"};if(dialog.ShowDialog(this)!=true)return;
+        examples=JsonSerializer.Deserialize<CorrectionExample[]>(File.ReadAllText(dialog.FileName),RecognitionJson.Options)??[];
+        StatusText.Text=$"已载入{examples.Count}条核对参考。每次只使用相关的最多3条；验收新货单时请关闭参考。";
+    });
+    private RecognitionContext ContextFor(RecognitionConfiguration configuration)
+    {
+        // Retrieval uses a previous extraction of the same screenshot, never benchmark answers.
+        var terms=capture?.Result?.Rows.Select(r=>r.Name).Where(n=>n.Length>=2).ToArray()??[];
+        var relevant=UseMemory.IsChecked==true?examples.Where(e=>terms.Any(t=>e.OriginalName.Contains(t,StringComparison.Ordinal)||e.Name.Contains(t,StringComparison.Ordinal))).Take(3).ToArray():[];
+        var details=configuration.Provider==RecognitionProviderKind.DeepSeek?DetailImagePreparation.Prepare(image.UploadPath,Path.Combine(Path.GetDirectoryName(image.UploadPath)!,"details")):[];
+        return new(relevant,details);
+    }
+    private async void CompareModels(object sender,RoutedEventArgs e)
+    {
+        try
+        {
+            if(busy)return;if(!image.HasImage||UploadConfirm.IsChecked!=true)throw new RecognitionException("请先选择图片，并勾选允许上传截图。");
+            configurations[selectedProvider]=CurrentConfiguration();
+            if(!configurations.TryGetValue(RecognitionProviderKind.Qwen,out var qwen)||!configurations.TryGetValue(RecognitionProviderKind.DeepSeek,out var deepseek))
+                throw new RecognitionException("请分别选择千问和 DeepSeek，填写各自密钥后再比较。");
+            qwen.Validate();deepseek.Validate();
+            var contexts=new[]{ContextFor(qwen),ContextFor(deepseek)};
+            var completedRuns=new List<RecognitionDiagnostic>();
+            using var budget=new CancellationTokenSource(TimeSpan.FromSeconds(180));
+            var configs=new[]{qwen,deepseek};
+            for(var i=0;i<configs.Length;i++)
+            {
+                var provider=RecognitionProviderFactory.Create(liveClient,configs[i],contexts[i]);
+                await CaptureAsync(provider,"real-call",budget.Token);
+                if(provider.LastDiagnostic is not null)completedRuns.Add(provider.LastDiagnostic);
+                if(provider.LastDiagnostic?.Stage is "Cancelled" or "Timeout" or "HttpError")break;
+                budget.Token.ThrowIfCancellationRequested();
+            }
+            comparisonRuns.AddRange(completedRuns);
+            StatusText.Text=$"已保留{completedRuns.Count}次模型响应，其中{completedRuns.Count(r=>r.Stage=="Completed")}次成功解析。导出后查看 model-comparison.json，按同一人工基准检查。";
+        }
+        catch(Exception ex){if(!closed)StatusText.Text=SafeMessage(ex);}
+    }
 }
 
 internal static class LocalReplay

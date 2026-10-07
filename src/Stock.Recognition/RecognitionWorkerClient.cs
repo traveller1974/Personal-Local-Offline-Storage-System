@@ -7,7 +7,9 @@ namespace Stock.Recognition;
 /// <summary>Hidden one-shot worker. Never retries a request or starts a second provider after a failure.</summary>
 public sealed class RecognitionWorkerClient(string executable, QwenConfiguration configuration) : IRecognitionService
 {
-    public TimeSpan Timeout { get; init; } = TimeSpan.FromSeconds(120);
+    public RecognitionConfiguration? ProviderConfiguration { get; init; }
+    public RecognitionContext? Context { get; init; }
+    public TimeSpan Timeout { get; init; } = TimeSpan.FromSeconds(210);
     // Explicit local developer replay; production leaves this unset and always uses --recognition-worker.
     public string? ReplayFile { get; init; }
     public async Task<RecognitionResult> RecognizeAsync(string confirmedImage, CancellationToken cancellationToken = default)
@@ -22,7 +24,7 @@ public sealed class RecognitionWorkerClient(string executable, QwenConfiguration
     }
     private async Task<RecognitionWorkerResponse> SendAsync(string operation, string image, CancellationToken cancellationToken)
     {
-        configuration.Validate();
+        (ProviderConfiguration ?? RecognitionConfiguration.From(configuration)).Validate();
         cancellationToken.ThrowIfCancellationRequested();
         if (!File.Exists(executable)) throw new RecognitionException("内置识别模块缺失，请修复安装或切回原识别版本。");
         var id = Guid.NewGuid().ToString();
@@ -42,7 +44,7 @@ public sealed class RecognitionWorkerClient(string executable, QwenConfiguration
         {
             if (!process.Start()) throw new RecognitionException("内置识别模块无法启动。");
             var stderr = process.StandardError.ReadToEndAsync(deadline.Token);
-            var request = new RecognitionWorkerRequest(id, operation, Path.GetFullPath(image), configuration);
+            var request = new RecognitionWorkerRequest(id, operation, Path.GetFullPath(image), configuration, ProviderConfiguration: ProviderConfiguration, Context: Context);
             await process.StandardInput.WriteLineAsync(JsonSerializer.Serialize(request, RecognitionWorkerProtocol.Json).AsMemory(), deadline.Token);
             process.StandardInput.Close();
             var line = await process.StandardOutput.ReadLineAsync(deadline.Token);

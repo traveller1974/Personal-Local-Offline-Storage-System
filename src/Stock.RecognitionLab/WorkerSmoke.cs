@@ -42,7 +42,7 @@ internal static class WorkerSmoke
             var errors = await process.StandardError.ReadToEndAsync();
             await process.WaitForExitAsync();
             var parsed = JsonSerializer.Deserialize<RecognitionWorkerResponse>(response, RecognitionWorkerProtocol.Json)!;
-            check(parsed.RequestId == request.RequestId && parsed.ProtocolVersion == 1 && parsed.Success && process.ExitCode == 0,
+            check(parsed.RequestId == request.RequestId && parsed.ProtocolVersion == RecognitionWorkerProtocol.Version && parsed.Success && process.ExitCode == 0,
                 "Worker output is one valid JSON response with matching request ID and protocol version");
             check(!response.Contains(configuration.ApiKey) && !errors.Contains(configuration.ApiKey), "Worker output and stderr exclude the pipe secret");
         }

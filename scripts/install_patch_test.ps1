@@ -74,6 +74,12 @@ try {
  New-Item -ItemType Directory -Force -Path $retainedPhoto,(Join-Path $storedRoot 'ProtectionBackups') | Out-Null
  Copy-Item -LiteralPath (Join-Path $target 'Samples/示例货单.png') -Destination (Join-Path $retainedPhoto 'retention-test.png')
  Set-Content -LiteralPath (Join-Path $storedRoot 'ProtectionBackups/retention-test.stockbackup') -Value 'isolated backup sentinel' -Encoding ASCII
+ # Auxiliary settings are opaque to the installer, including settings introduced after the baseline.
+ $settingsRoot=Join-Path $storedRoot 'Settings'
+ New-Item -ItemType Directory -Force -Path $settingsRoot | Out-Null
+ Set-Content -LiteralPath (Join-Path $settingsRoot 'deepseek.dpapi') -Value 'isolated encrypted-setting sentinel' -Encoding ASCII
+ Set-Content -LiteralPath (Join-Path $settingsRoot 'recognition-provider.txt') -Value 'DeepSeek' -Encoding ASCII
+ Copy-Item -LiteralPath (Join-Path $oldData 'stock.db') -Destination (Join-Path $oldData 'recognition-memory.db')
  $before=Fingerprint $storedRoot
  $storedFileCount=@(Get-ChildItem -LiteralPath $storedRoot -File -Recurse -Force).Count
  $beforeDatabase=(Get-FileHash -LiteralPath (Join-Path $oldData 'stock.db') -Algorithm SHA256).Hash

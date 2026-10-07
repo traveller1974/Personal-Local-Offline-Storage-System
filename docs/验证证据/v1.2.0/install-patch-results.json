@@ -1,0 +1,23 @@
+{
+  "success": true,
+  "checks": [
+    "Installer succeeds: v1.1.4-test-setup.exe",
+    "Installer succeeds: v1.2.0-test-setup.exe",
+    "Patch installation leaves the existing v2 database unchanged before application startup",
+    "Patch installation preserves every stored database, photo, DPAPI setting and backup byte for byte",
+    "Installed application reports version 1.2.0",
+    "Independent installed regression checks do not touch existing baseline data",
+    "Installer succeeds: v1.2.0-test-setup.exe",
+    "Reinstalling the patch preserves every previously stored file",
+    "Uninstall removes the isolated application",
+    "Uninstall preserves every stored file byte for byte",
+    "Patch test registration is removed",
+    "Real installation registration remains unchanged"
+  ],
+  "storedFileCount": 17,
+  "baselineVersion": "1.1.4",
+  "targetVersion": "1.2.0",
+  "testDirectory": "D:\\workspace\\codex工作区\\local-stock-manager\\artifacts\\v1.2.0\\i-f5764b10",
+  "realInstallationPreserved": true,
+  "cleanMachineVerified": false
+}

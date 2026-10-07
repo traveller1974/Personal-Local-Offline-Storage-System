@@ -47,6 +47,9 @@
         "dependencies": {
           "SQLitePCLRaw.core": "2.1.11"
         }
+      },
+      "stock.recognition": {
+        "type": "Project"
       }
     }
   }

@@ -37,14 +37,14 @@ internal static class ProductEntrySmoke
             row.Reviewed = true;
             name.Editor.Focus(); name.Editor.Text = "飞驰"; await name.RefreshSuggestionsAsync();
             check(name.Suggestions.Items.Cast<string>().SequenceEqual(new[] { "飞驰一代", "飞驰二代" }) && row.Name == "飞驰", "Typing a keyword lists both existing names without replacing the typed text");
-            check(!row.Reviewed && !row.CanReview, "Changing a suggested identity field still revokes review and requires exact product association");
+            check(row.Reviewed && !row.CanReview, "Changing an identity field retains the optional marker and still requires a valid product association");
             KeyPress(name, System.Windows.Input.Key.Enter);
             check(row.Name == "飞驰", "Enter without a selected suggestion preserves a new name");
             CapturePopup(name, Path.Combine(output, "name-suggestions.png"));
             KeyPress(name, System.Windows.Input.Key.Down); KeyPress(name, System.Windows.Input.Key.Enter);
             check(row.Name == "飞驰一代" && name.GetBindingExpression(ProductTermBox.TextProperty) is not null && !name.SuggestionsPopup.IsOpen,
                 "Down and Enter select an existing term while retaining the caller's two-way binding");
-            check(row.Spec == "48V" && row.Color == "薄荷绿" && !row.Reviewed, "Selecting a name changes that field only and does not mark the row reviewed");
+            check(row.Spec == "48V" && row.Color == "薄荷绿" && row.Reviewed, "Selecting a name changes that field only and retains the user's optional marker");
 
             color.Editor.Focus(); color.Editor.Text = ""; await color.RefreshSuggestionsAsync();
             check(color.Suggestions.Items.Cast<string>().ToHashSet().SetEquals(new[] { "薄荷绿", "天蓝" }) && row.Color == "", "Empty color displays existing colors while preserving the empty value");
@@ -60,7 +60,7 @@ internal static class ProductEntrySmoke
             name.Editor.Focus(); name.Editor.Text = "飞驰二代"; await name.RefreshSuggestionsAsync();
             KeyPress(name, System.Windows.Input.Key.Down); KeyPress(name, System.Windows.Input.Key.Enter);
             for(var attempt=0;attempt<200&&(row.Matching||row.Product?.Name!="飞驰二代");attempt++)await Task.Delay(10);
-            check(row.Product?.Name == "飞驰二代" && row.CanReview && !row.Reviewed, $"Selecting three complete matching values uses the existing exact association and manual review gate ({row.Name}, {row.Spec}, {row.Color}, product={row.Product?.Name}, review={row.Reviewed})");
+            check(row.Product?.Name == "飞驰二代" && row.CanReview && row.Reviewed, $"Selecting three complete matching values associates the valid product and retains the optional marker ({row.Name}, {row.Spec}, {row.Color}, product={row.Product?.Name}, review={row.Reviewed})");
 
             name.Editor.Text = "飞驰";
             var older = name.RefreshSuggestionsAsync(true);
